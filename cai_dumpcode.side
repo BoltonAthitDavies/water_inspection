@@ -1,0 +1,21 @@
+{
+  "id": "705f01df-fa64-4373-a173-17546d29b5a6",
+  "version": "2.0",
+  "name": "cai_dumpcode",
+  "url": "",
+  "tests": [{
+    "id": "43ea7321-3e4b-4d23-bafc-097430fb7368",
+    "name": "Untitled",
+    "commands": []
+  }],
+  "suites": [{
+    "id": "c83067dc-01c4-4f22-baf2-6babcfeeb0d4",
+    "name": "Default Suite",
+    "persistSession": false,
+    "parallel": false,
+    "timeout": 300,
+    "tests": ["43ea7321-3e4b-4d23-bafc-097430fb7368"]
+  }],
+  "urls": [],
+  "plugins": []
+}
