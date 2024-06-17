@@ -159,6 +159,8 @@ class RPA:
         monthPlan_Button = driver.find_element(By.XPATH, table_path + f'tr[{ro}]/td[{col}]/div/div[2]/div[{button}]/a')
         ## กดปุ่ม "n แผน" ในวันที่ 1 มิ.ย. 2024
         monthPlan_Button.click()
+        time.sleep(2)
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
 
         return str(f'{date}_{months[current_months]}_{current_year}')
     
@@ -233,6 +235,7 @@ if __name__ == '__main__':
     try:
         loginPage = RPA(login_url)
         driver = loginPage.getURL(window=True)
+        # driver.set_window_size(500, 850)
         
         ## หน้า login --> หน้าตารางรวมแผนงาน
         loginPage.initialize(driver=driver)
@@ -240,21 +243,23 @@ if __name__ == '__main__':
         time.sleep(2)
         
         ## เลือกวัน
-        date = loginPage.selectDay(date=8)
-
-        time.sleep(4)
+        date = loginPage.selectDay(date=2)
+        time.sleep(2)
 
         # สร้าง element ที่กำหนดจำนวน column
         choose_column = driver.find_element(By.XPATH, '/html/body/app-root/app-e-service-table/div/mat-paginator/div/div/div[1]/mat-form-field/div[1]/div/div[2]/mat-select')
         ## กดปุ่มที่กำหนดจำนวน column
         choose_column.click()
-        time.sleep(2)
+        #time.sleep(2)
         
         # สร้าง element ที่กำหนดตารางเป็น 100 column 
         hundred_column = driver.find_element(By.XPATH, '/html/body/div[1]/div[2]/div/div/mat-option[4]')
         ## กดปุ่มที่กำหนดจำนวน column
         hundred_column.click()
         time.sleep(2)
+
+        driver.execute_script("window.scrollTo(0, 0)")
+        time.sleep(1)
 
         # row  column(pic button)
         # tr[1]/td[4]
@@ -265,7 +270,7 @@ if __name__ == '__main__':
         ## กดปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
         pic_button.click()
 
-        time.sleep(4)
+        time.sleep(5)
 
         ## print html script ของหน้านี้
         pic_link_contents = loginPage.getpageScript(driver=driver)
