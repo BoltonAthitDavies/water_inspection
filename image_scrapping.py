@@ -9,6 +9,7 @@ import requests
 from PIL import Image
 from io import BytesIO
 from datetime import datetime
+import os
 
 class RPA:
     def __init__(self, url):
@@ -251,7 +252,7 @@ if __name__ == '__main__':
         choose_column = driver.find_element(By.XPATH, '/html/body/app-root/app-e-service-table/div/mat-paginator/div/div/div[1]/mat-form-field/div[1]/div/div[2]/mat-select')
         ## กดปุ่มที่กำหนดจำนวน column
         choose_column.click()
-        #time.sleep(2)
+        time.sleep(2)
         
         # สร้าง element ที่กำหนดตารางเป็น 100 column 
         hundred_column = driver.find_element(By.XPATH, '/html/body/div[1]/div[2]/div/div/mat-option[4]')
@@ -266,7 +267,7 @@ if __name__ == '__main__':
         # print(pic_list[1])
 
         driver.execute_script("window.scrollTo(0, 0)")
-        time.sleep(1)
+        time.sleep(2)
 
 
         # row  column(pic button)
@@ -316,11 +317,17 @@ if __name__ == '__main__':
             date = date + "/"
             work_sap = work_sap + "/"
             t = tank_name[i] + "/"
+            try:
+                os.mkdir(pic_root_path + date + work_sap + t + "before/")
+                os.mkdir(pic_root_path + date + work_sap + t + "after/")
+            except:
+                print("you suck ")
+                pass
             # for url in pic_list:
             #     # print(url)
             #     loginPage.savePic(url, pic_root_path)
             print(len(label[i][1][0]))
-            for j in range(label[i][1]):
+            for j in range(len(label[i][1])):
                 if j == 0:
                     for k in label[i][1][j][1:]:
                         loginPage.savePic(pic_list[pic_ch], pic_root_path + date + work_sap + t + "before/")

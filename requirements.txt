@@ -1,4 +1,8 @@
-matplotlib
+tensorflow==2.15.0
+keras==2.15.0
+matplotlib==3.4.3
+jax
+jaxlib
 numpy
 scipy
 selenium
