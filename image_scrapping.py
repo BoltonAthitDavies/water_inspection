@@ -136,7 +136,7 @@ class RPA:
         current_months = now.month
         # current year : 2024
         current_year = now.year
-        print(f"current_month : {months[current_months]}")
+        # print(f"current_month : {months[current_months]}")
 
         ##   row   column(day)            button                                                                                                             
         ## /tr[2]/   td[7]    /div/div[2]/div[1]/a
@@ -234,7 +234,7 @@ if __name__ == '__main__':
 
     try:
         loginPage = RPA(login_url)
-        driver = loginPage.getURL(window=True)
+        driver = loginPage.getURL(window=False)
         # driver.set_window_size(500, 850)
         
         ## หน้า login --> หน้าตารางรวมแผนงาน
@@ -244,6 +244,7 @@ if __name__ == '__main__':
         
         ## เลือกวัน
         date = loginPage.selectDay(date=2)
+        print(date)
         time.sleep(2)
 
         # สร้าง element ที่กำหนดจำนวน column
@@ -258,19 +259,27 @@ if __name__ == '__main__':
         hundred_column.click()
         time.sleep(2)
 
+        # หาจำนวนรูปภาพทั้งหมด
+        ## print html script ของหน้านี้
+        pic_link_contents = loginPage.getpageScript(driver=driver)
+        pic_list = loginPage.getList(pic_link_contents,'"', 'amazon')
+        # print(pic_list[1])
+
         driver.execute_script("window.scrollTo(0, 0)")
         time.sleep(1)
+
 
         # row  column(pic button)
         # tr[1]/td[4]
         # path หน้าตารางแผนงาน ณ เดือนที่เลือก
+        n = 1
         sub_table_path = '/html/body/app-root/app-e-service-table/div/app-table-contract/div/table/tbody/'
          ## element ของปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
-        pic_button = driver.find_element(By.XPATH, sub_table_path + 'tr[4]/td[4]')
+        pic_button = driver.find_element(By.XPATH, sub_table_path + f'tr[{n}]/td[4]')
         ## กดปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
         pic_button.click()
 
-        time.sleep(5)
+        time.sleep(15)
 
         ## print html script ของหน้านี้
         pic_link_contents = loginPage.getpageScript(driver=driver)
@@ -300,11 +309,36 @@ if __name__ == '__main__':
         label  = loginPage.getlabel(pic_link_contents)
         print("label : ", label)
 
-        ## save images
-        pic_root_path = './images/'
-        for url in pic_list:
-            # print(url)
-            loginPage.savePic(url, './images/')
+        pic_ch = 0
+        for i in range(len(tank_name)):        
+            ## save images
+            pic_root_path = './images/'
+            date = date + "/"
+            work_sap = work_sap + "/"
+            t = tank_name[i] + "/"
+            # for url in pic_list:
+            #     # print(url)
+            #     loginPage.savePic(url, pic_root_path)
+            print(len(label[i][1][0]))
+            for j in range(label[i][1]):
+                if j == 0:
+                    for k in label[i][1][j][1:]:
+                        loginPage.savePic(pic_list[pic_ch], pic_root_path + date + work_sap + t + "before/")
+                        pic_ch += 1 
+                elif j == 1:
+                    for k in label[i][1][j][1:]:
+                        loginPage.savePic(pic_list[pic_ch], pic_root_path + date + work_sap + t + "after/")
+                        pic_ch += 1
+
+
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
+        time.sleep(2)
+
+        # สร้าง element ปุ่มย้อนกลับ
+        back_button = driver.find_element(By.XPATH, '/html/body/app-root/app-images/div/div/div[5]')
+        ## กดปุ่มย้อนกลับ
+        back_button.click()
+        time.sleep(2)
 
 
     except Exception as e:

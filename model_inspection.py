@@ -3,17 +3,16 @@ import os
 os.environ["KERAS_BACKEND"] = "jax"
 
 import cv2
-import shutil
+# import shutil
 import numpy as np
 import keras
-import keras_cv
 import numpy as np
 import tensorflow_datasets as tfds
 import matplotlib.pyplot as plt
-from keras.preprocessing.image import ImageDataGenerator
-from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout
-from keras.preprocessing.image import ImageDataGenerator
+# from keras.preprocessing.image import ImageDataGenerator
+# from keras.models import Sequential
+# from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout
+# from keras.preprocessing.image import ImageDataGenerator
 from keras.applications import EfficientNetV2B0
 import tensorflow as tf
 
