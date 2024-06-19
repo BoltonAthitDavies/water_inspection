@@ -241,34 +241,34 @@ if __name__ == '__main__':
         ## หน้า login --> หน้าตารางรวมแผนงาน
         loginPage.initialize(driver=driver)
 
-        time.sleep(2)
+        time.sleep(3)
         
         ## เลือกวัน
-        date = loginPage.selectDay(date=2)
+        date = loginPage.selectDay(date=1)
         print(date)
-        time.sleep(2)
+        time.sleep(3)
 
         # สร้าง element ที่กำหนดจำนวน column
         choose_column = driver.find_element(By.XPATH, '/html/body/app-root/app-e-service-table/div/mat-paginator/div/div/div[1]/mat-form-field/div[1]/div/div[2]/mat-select')
         ## กดปุ่มที่กำหนดจำนวน column
         choose_column.click()
-        time.sleep(2)
+        time.sleep(3)
         
         # สร้าง element ที่กำหนดตารางเป็น 100 column 
         hundred_column = driver.find_element(By.XPATH, '/html/body/div[1]/div[2]/div/div/mat-option[4]')
         ## กดปุ่มที่กำหนดจำนวน column
         hundred_column.click()
-        time.sleep(2)
+        time.sleep(3)
 
         # หาจำนวนรูปภาพทั้งหมด
         ## print html script ของหน้านี้
-        pic_link_contents = loginPage.getpageScript(driver=driver)
-        pic_list = loginPage.getList(pic_link_contents,'"', 'amazon')
-        # print(pic_list[1])
+        num_pic_link_contents = loginPage.getpageScript(driver=driver)
+        num_pic_list = loginPage.getList(num_pic_link_contents,'"', ' of ')
+        num_pic_list = num_pic_list[0].split(' ')[2]
+        print(f"number of img : {num_pic_list}")
 
         driver.execute_script("window.scrollTo(0, 0)")
-        time.sleep(2)
-
+        time.sleep(3)
 
         # row  column(pic button)
         # tr[1]/td[4]
@@ -300,10 +300,21 @@ if __name__ == '__main__':
         print(work_sap)
 
         ## หาชื่อของถัง
-        tank_name = loginPage.getList(pic_link_contents, '"', 'NO.')
-        for tank in tank_name:
+        tank_name_trash = loginPage.getList(pic_link_contents, '"', 'NO.')
+        tank_name = []
+        for tank in tank_name_trash:
             tank.replace("<div _ngcontent-hls-c96=", "")
             tank.replace(">", "")
+            ch = 0
+            for i in tank:
+                if i == '-':
+                    break
+                else:
+                    ch += 1
+            print(f'tank : {tank}')
+            print(f'tank_new : {tank[:ch]}')
+            #tank.replace(tank, tank[:ch])
+            tank_name.append(tank[:ch])
         print(tank_name)
 
         ## หา label ของรูปภาพ
@@ -313,29 +324,52 @@ if __name__ == '__main__':
         pic_ch = 0
         for i in range(len(tank_name)):        
             ## save images
-            pic_root_path = './images/'
-            date = date + "/"
-            work_sap = work_sap + "/"
-            t = tank_name[i] + "/"
+            current_directory = os.getcwd()
+            pic_root_path = '.\\images\\'
+            date = date
+            work_sap = work_sap
+            t = tank_name[i]
+            sum_path = f"{pic_root_path}{date}\\{work_sap}\\{t}\\"
+            #sum_path = sum_path.replace("\\\\", "\\")
+            print(sum_path + "before\\")
             try:
-                os.mkdir(pic_root_path + date + work_sap + t + "before/")
-                os.mkdir(pic_root_path + date + work_sap + t + "after/")
-            except:
-                print("you suck ")
+                os.mkdir(f"{pic_root_path}{date}")
+            except Exception as e:
+                print(f"you suck : {e}")
+                pass
+            try:
+                os.mkdir(f"{pic_root_path}{date}\\{work_sap}\\")
+            except Exception as e:
+                print(f"you suck : {e}")
+                pass
+            try:
+                os.mkdir(f"{pic_root_path}{date}\\{work_sap}\\{t}\\")
+            except Exception as e:
+                print(f"you suck : {e}")
+                pass
+            try:
+                os.mkdir(sum_path + "before\\")
+            except Exception as e:
+                print(f"you suck : {e}")
+                pass
+            try:
+                os.mkdir(sum_path + "after\\")
+            except Exception as e:
+                print(f"you suck : {e}")
                 pass
             # for url in pic_list:
             #     # print(url)
             #     loginPage.savePic(url, pic_root_path)
-            print(len(label[i][1][0]))
-            for j in range(len(label[i][1])):
-                if j == 0:
-                    for k in label[i][1][j][1:]:
-                        loginPage.savePic(pic_list[pic_ch], pic_root_path + date + work_sap + t + "before/")
-                        pic_ch += 1 
-                elif j == 1:
-                    for k in label[i][1][j][1:]:
-                        loginPage.savePic(pic_list[pic_ch], pic_root_path + date + work_sap + t + "after/")
-                        pic_ch += 1
+            # print(len(label[i][1][0]))
+            # for j in range(len(label[i][1])):
+            #     if j == 0:
+            #         for k in label[i][1][j][1:]:
+            #             loginPage.savePic(pic_list[pic_ch], sum_path + "before\\")
+            #             pic_ch += 1 
+            #     elif j == 1:
+            #         for k in label[i][1][j][1:]:
+            #             loginPage.savePic(pic_list[pic_ch], sum_path + "after\\")
+            #             pic_ch += 1
 
 
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
@@ -355,4 +389,3 @@ if __name__ == '__main__':
         # Ensure the browser is closed even if an error occurs
         time.sleep(3)
         driver.quit()
-

@@ -7,5 +7,6 @@ numpy
 scipy
 selenium
 webdriver-manager
+streamlit
 
 

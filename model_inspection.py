@@ -7,7 +7,6 @@ import cv2
 import numpy as np
 import keras
 import numpy as np
-import tensorflow_datasets as tfds
 import matplotlib.pyplot as plt
 # from keras.preprocessing.image import ImageDataGenerator
 # from keras.models import Sequential
