@@ -1,0 +1,427 @@
+import streamlit as st
+import inspect
+import textwrap
+import pandas as pd
+import altair as alt
+import os
+import matplotlib.pyplot as plt
+from PIL import Image
+import base64
+import plotly.express as px
+from image_scrapping import RPA
+from model_inspection import *
+# from utils import show_code
+from urllib.error import URLError
+
+def createDataset(day, month, year, window, switch):
+    login_url = 'https://pm-rsm.cpretailink.co.th/login'
+    loginPage = RPA(login_url)
+    driver = loginPage.getURL(window=window)
+    if switch == True:
+        try:
+            # driver.set_window_size(500, 850)
+
+            # zoom_level = "0.75"  # Zoom in to 150%
+            # driver.execute_script(f"document.body.style.zoom='{zoom_level}'")
+
+            ## หน้า login --> หน้าตารางรวมแผนงาน
+            date = loginPage.initialize(driver=driver,date=day, month=month, year=year)
+            print(date)
+            time.sleep(3)
+
+            # สร้าง element ที่กำหนดจำนวน column
+            choose_column = driver.find_element(By.XPATH, '/html/body/app-root/app-e-service-table/div/mat-paginator/div/div/div[1]/mat-form-field/div[1]/div/div[2]/mat-select')
+            ## กดปุ่มที่กำหนดจำนวน column
+            choose_column.click()
+            time.sleep(3)
+
+            # สร้าง element ที่กำหนดตารางเป็น 100 column 
+            hundred_column = driver.find_element(By.XPATH, '/html/body/div[1]/div[2]/div/div/mat-option[4]')
+            ## กดปุ่มที่กำหนดจำนวน column
+            hundred_column.click()
+            time.sleep(3)
+
+            # หาจำนวนรูปภาพทั้งหมด
+            ## print html script ของหน้านี้
+            num_pic_link_contents = loginPage.getpageScript(driver=driver)
+            num_pic_list = loginPage.getList(num_pic_link_contents,'"', ' of ')
+            num_pic_list = num_pic_list[0].split(' ')[2]
+            print(f"number of img : {num_pic_list}")
+
+            driver.execute_script("window.scrollTo(0, 0)")
+            time.sleep(3)
+
+            # row  column(pic button)
+            # tr[1]/td[4]
+            # path หน้าตารางแผนงาน ณ เดือนที่เลือก
+            n = 1
+            while n <= int(num_pic_list):
+                print(f"n = {n}")
+
+                driver.execute_script(f"window.scrollTo(0, document.body.scrollHeight)")
+                time.sleep(2)
+
+                # สร้าง element ที่กำหนดจำนวน column
+                choose_column = driver.find_element(By.XPATH, '/html/body/app-root/app-e-service-table/div/mat-paginator/div/div/div[1]/mat-form-field/div[1]/div/div[2]/mat-select')
+                ## กดปุ่มที่กำหนดจำนวน column
+                choose_column.click()
+                time.sleep(3)
+
+                # สร้าง element ที่กำหนดตารางเป็น 100 column 
+                hundred_column = driver.find_element(By.XPATH, '/html/body/div[1]/div[2]/div/div/mat-option[4]')
+                ## กดปุ่มที่กำหนดจำนวน column
+                hundred_column.click()
+                time.sleep(5)
+
+                driver.execute_script(f"window.scrollTo(0, 0)")
+                time.sleep(2)
+
+                # scroll หา element ของปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
+                scroll_height = driver.execute_script("return document.body.scrollHeight")
+                scroll_to_height = round((scroll_height * n) // int(num_pic_list))
+                print(f"scroll_height : {scroll_height}")
+                print(f"scroll_to_height : {scroll_to_height}")
+                driver.execute_script(f"window.scrollTo(0, {scroll_to_height})")
+                time.sleep(2)
+                # # /html/body/app-root/app-e-service-table/div/app-table-contract/div/table/tbody/tr[33]/td[4]
+                sub_table_path = '/html/body/app-root/app-e-service-table/div/app-table-contract/div/table/tbody/'
+                print(sub_table_path + f'tr[{n}]/td[4]')
+                try:
+                    ## element ของปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
+                    pic_button = driver.find_element(By.XPATH, sub_table_path + f'tr[{n}]/td[4]')
+                    ## กดปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
+                    pic_button.click()
+                except Exception as e:
+                    print(f"Cannot find element no. {n}")
+                    #print(e)
+                    n += 1
+                    continue
+
+                time.sleep(17)
+
+                ## print html script ของหน้านี้
+                pic_link_contents = loginPage.getpageScript(driver=driver)
+                pic_list = loginPage.getList(pic_link_contents,'"', 'amazon')
+                # print(pic_list[1])
+
+                ## หา work sap (ID)
+                work_sap = loginPage.getList(pic_link_contents, '"', 'Work SAP')
+                work_sap[0] = work_sap[0].replace(" ", "")
+                for i in range(len(work_sap[0])-12):
+                    if '52000' in work_sap[0][i:i+12]:
+                        try:
+                            work_sap = str(int(work_sap[0][i:i+12]))
+                            break
+                        except:
+                            continue
+                print(work_sap)
+
+                ## หาชื่อของถัง
+                tank_name_trash = loginPage.getList(pic_link_contents, '"', 'NO.')
+                tank_name = []
+                for tank in tank_name_trash:
+                    tank.replace("<div _ngcontent-hls-c96=", "")
+                    tank.replace(">", "")
+                    ch = 0
+                    for i in tank:
+                        if i == '-':
+                            break
+                        else:
+                            ch += 1
+                    print(f'tank : {tank}')
+                    print(f'tank_new : {tank[:ch]}')
+                    #tank.replace(tank, tank[:ch])
+                    tank_name.append(tank[:ch])
+                print(tank_name)
+
+                ## หา label ของรูปภาพ
+                label  = loginPage.getlabel(pic_link_contents)
+                print("label : ", label)
+
+                pic_ch = 0
+                for i in range(len(tank_name)):        
+                    ## save images
+                    current_directory = os.getcwd()
+                    pic_root_path = '.\\images\\'
+                    date = date
+                    work_sap = work_sap
+                    t = tank_name[i]
+                    sum_path = f"{pic_root_path}{date}\\{work_sap}\\{t}\\"
+                    #sum_path = sum_path.replace("\\\\", "\\")
+                    print(sum_path + "before\\")
+                    try:
+                        os.mkdir(f"{pic_root_path}{date}")
+                    except Exception as e:
+                        print(f"you suck : {e}")
+                        pass
+                    try:
+                        os.mkdir(f"{pic_root_path}{date}\\{work_sap}\\")
+                    except Exception as e:
+                        print(f"you suck : {e}")
+                        pass
+                    try:
+                        os.mkdir(f"{pic_root_path}{date}\\{work_sap}\\{t}\\")
+                    except Exception as e:
+                        print(f"you suck : {e}")
+                        pass
+                    try:
+                        os.mkdir(sum_path + "before\\")
+                    except Exception as e:
+                        print(f"you suck : {e}")
+                        pass
+                    try:
+                        os.mkdir(sum_path + "after\\")
+                    except Exception as e:
+                        print(f"you suck : {e}")
+                        pass
+                    # for url in pic_list:
+                    #     # print(url)
+                    #     loginPage.savePic(url, pic_root_path)
+                    print(len(label[i][1][0]))
+                    for j in range(len(label[i][1])):
+                        if j == 0:
+                            for k in label[i][1][j][1:]:
+                                loginPage.savePic(pic_list[pic_ch], sum_path + "before\\")
+                                pic_ch += 1 
+                        elif j == 1:
+                            for k in label[i][1][j][1:]:
+                                loginPage.savePic(pic_list[pic_ch], sum_path + "after\\")
+                                pic_ch += 1
+
+                # time.sleep(2)
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
+                time.sleep(2)
+
+                bank_len = len(tank_name)
+                # print(f"bank_len : {bank_len}")
+
+                # สร้าง element ปุ่มย้อนกลับ
+                #/html/body/app-root/app-images/div/div/div[3]
+                back_button = driver.find_element(By.XPATH, f"/html/body/app-root/app-images/div/div/div[{bank_len + 1}]")
+                ## กดปุ่มย้อนกลับ
+                driver.execute_script("arguments[0].click();", back_button)
+                #back_button.click()
+                time.sleep(2)
+                print(f"n = {n} is done.")
+                n += 1
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+        finally:
+            # Ensure the browser is closed even if an error occurs
+            time.sleep(3)
+            driver.quit()
+    else:
+        print("Stop RPA")
+        time.sleep(3)
+        driver.quit()
+
+def data_frame_demo():
+    @st.cache_data
+        
+    def get_image_base64(image_path):
+        with open(image_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode()
+
+    def display_image_popout(image_path):
+        st.markdown(
+            f"""
+            <style>
+            .modal {{
+                display: none; 
+                position: fixed; 
+                z-index: 1; 
+                left: 0;
+                top: 0;
+                width: 100%; 
+                height: 100%; 
+                overflow: auto; 
+                background-color: rgb(0,0,0); 
+                background-color: rgba(0,0,0,0.9); 
+            }}
+
+            .modal-content {{
+                margin: 15% auto;
+                display: block;
+                width: 80%;
+                max-width: 700px;
+            }}
+
+            .close {{
+                position: absolute;
+                top: 15px;
+                right: 35px;
+                color: #f1f1f1;
+                font-size: 40px;
+                font-weight: bold;
+            }}
+
+            .close:hover,
+            .close:focus {{
+                color: #bbb;
+                text-decoration: none;
+                cursor: pointer;
+            }}
+            </style>
+
+            <img id="myImg" src="data:image/jpeg;base64,{image_path}" style="width:100%;max-width:300px;cursor:pointer" onclick="document.getElementById('myModal').style.display='block'">
+
+            <div id="myModal" class="modal">
+              <span class="close" onclick="document.getElementById('myModal').style.display='none'">&times;</span>
+              <img class="modal-content" id="img01">
+            </div>
+
+            <script>
+            var modal = document.getElementById("myModal");
+            var img = document.getElementById("myImg");
+            var modalImg = document.getElementById("img01");
+
+            img.onclick = function(){{
+                modal.style.display = "block";
+                modalImg.src = this.src;
+            }}
+
+            var span = document.getElementsByClassName("close")[0];
+
+            span.onclick = function() {{ 
+                modal.style.display = "none";
+            }}
+            </script>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    def get_pic_data(path):
+        df = pd.read_csv(path)
+        return df
+    
+
+    def get_data(df, column):
+        # pm[pm['tank_name'] == 'NO.1 ถังน้ำดื่ม ']['tank_name'].count()
+        tank_name = []
+        tank_quantity = []
+        for i,j in enumerate(df[column].unique()):
+            if type(j) != str:
+                pass
+            else:
+                tank_name.append(j)
+                tank_quantity.append(df[df[column] == j][column].count())
+
+        return tank_name, tank_quantity
+
+    try:
+        year_options = ["2023", "2024"]
+        month_options = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+        day = {"January": 31, "February": 28, "March": 31, "April": 30, "May": 31, "June": 30, "July": 31, "August": 31, "September": 30, "October": 31, "November": 30, "December": 31}
+
+        year_option = st.selectbox("Select year:", year_options)
+        month_option = st.selectbox("Select month:", month_options)
+        
+        day_options = [i for i in range(1,day[month_option]+1)]
+        day_option = st.selectbox("Select day:", day_options)
+
+        # # Display the selected option
+        # st.write("You selected:", selected_option)
+
+        dfs_path = ".\\dataframe\\"
+        dfs_list = os.listdir(dfs_path)
+        df_path = f"{day_option}_{month_option}_{year_option}.csv"
+        predictedDF_path = f"{day_option}_{month_option}_{year_option}_predict.csv"
+
+        if df_path in dfs_list:
+        
+            id = get_pic_data(dfs_path + df_path) 
+            predicted_id = get_pic_data(dfs_path + predictedDF_path).sort_index()
+            tank_name, tank_quantity = get_data(predicted_id, 'tank_name')
+            st.write(f"### PM Attendance Plan {df_path[:len(df_path)-4]}", id.sort_index())
+
+            get_name = predicted_id['name'].unique()
+            image_name = st.text_input("Enter image name", max_chars=500)
+            if st.button('Visualize'):
+                if image_name in get_name:
+                    info = predicted_id[predicted_id['name'] == image_name]
+                    # st.write("You entered:", info)
+                    st.write("Model Prediction :", info['predict'].values[0]) 
+                    path = f".\\images\\{df_path[:len(df_path)-4]}\\" + str(info['id'].values[0]) + "\\" + info['tank_name'].values[0] + "\\" + info['time'].values[0] + "\\" + image_name
+                    #path = 'C:\\Users\\User\\water_inspection\\images\\1_June_2024\\520003758840\\NO.1 การตรวจสอบคุณภาพน้ำประปา \\after\\2024-06-03_0e4771ec-5fcc-4fc6-8d7c-32d68bb7303e.jpg.jpg'
+                    image_base64 = get_image_base64(path)
+                    display_image_popout(image_base64)
+                else:
+                    image_name = ''
+
+            # tank_name, tank_quantity = get_tank_data(predictedDF_path)
+            st.write(f"### Image Dataset {df_path[:len(df_path)-3]}", predicted_id)
+            for i in range(5):
+                st.write("")
+            # Create the bar chart with customizations
+            tank_dataFrame = pd.DataFrame({
+                'Tank': tank_name,
+                'Amount': tank_quantity
+            })
+            bar_chart = alt.Chart(tank_dataFrame).mark_bar().encode(
+                x=alt.X('Tank', sort='-y'),  # Sort bars by amount
+                y='Amount',
+                color='Tank',  # Color bars by fruit
+                tooltip=['Tank', 'Amount']  # Add tooltips
+            ).properties(
+                title=f'Amount of Tank = {sum(tank_quantity)}'
+            ).interactive()  # Make the chart interactive
+
+            # Display the chart in Streamlit
+            st.altair_chart(bar_chart, use_container_width=True)
+            
+            predict_name, predict_quantity = get_data(predicted_id, 'predict')
+            data = pd.DataFrame({
+                'Prediction': predict_name,
+                'Amount': predict_quantity
+            })
+
+            color_discrete_map = {
+                'ถูกต้อง': 'green',
+                'ไม่ถูกต้อง': 'red',
+            }
+
+
+            # Create the pie chart
+            fig = px.pie(data, values='Amount', names='Prediction', title='Prediction Distribution',color='Prediction',
+                         color_discrete_map=color_discrete_map)
+            st.plotly_chart(fig)
+            
+        else:
+            st.write("### Please select a valid date")
+
+    except URLError as e:
+        st.error(
+            """
+            **This demo requires internet access.**
+            Connection error: %s
+        """
+            % e.reason
+        )
+
+
+st.set_page_config(page_title="Water PM Project", page_icon="📊")
+st.markdown("# Test RPA")
+if st.button('test RPA'):
+    createDataset(day = 4, month = 6, year = 2024, window = False, switch = True)
+    date = "9_June_2024"
+    month = {"January":1, "February":2, "March":3, "April":4, "May":5, "June":6, "July":7, "August":8, "September":9, "October":10, "November":11, "December":12}
+    date_list = date.split("_")
+    model = initialize_model()
+
+    createDF(model, date)
+    
+    tf.keras.backend.clear_session()
+
+if st.button('Stop RPA'):
+    createDataset(day = date[0], month = month[date[1]], year = date[2], window = False, switch = False)
+
+st.markdown("# Water PM Project")
+st.sidebar.header("Water PM Project")
+st.write(
+    """This demo demonstrates how to create a simple dashboard of water pm project."""
+)
+
+data_frame_demo()
+
+# show_code(mapping_demo)

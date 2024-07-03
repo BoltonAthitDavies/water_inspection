@@ -3,6 +3,9 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 # from bs4 import BeautifulSoup
 import time
 import requests
@@ -43,7 +46,7 @@ class RPA:
                 hope.append(i)
         return hope
     
-    def initialize(self, driver):
+    def initialize(self, driver, date, month, year):
         ## element ของ fill text username และ password
         username =  driver.find_element(By.CSS_SELECTOR, 'input[formcontrolname="username"]')
         password =  driver.find_element(By.CSS_SELECTOR, 'input[formcontrolname="password"]')
@@ -54,6 +57,35 @@ class RPA:
         
         ## กดปุ่ม enter เพื่อ login
         password.send_keys(Keys.RETURN)
+
+        time.sleep(2)
+
+        ## element ของปุ่ม "เดือนที่เปิดงาน"
+        date_select =  driver.find_element(By.XPATH, "/html/body/app-root/app-plan-search/div/div/div[2]/app-search-pm-box/div/form/div[1]/div[2]/mat-form-field/div[1]/div[2]/div[1]/input")
+        ## กดปุ่ม "เดือนที่เปิดงาน"
+        date_select.click()
+
+        time.sleep(2)
+       
+        if year == 2024:
+            ## element ของปุ่ม "2024"
+            year2024_select =  driver.find_element(By.XPATH, '/html/body/div/div[2]/div/mat-datepicker-content/div[2]/mat-calendar/div/mat-multi-year-view/table/tbody/tr[6]/td[4]/button')
+            ## กดปุ่ม "2024"
+            year2024_select.click()
+        else:
+            ## element ของปุ่ม "2023"
+            year2024_select =  driver.find_element(By.XPATH, '/html/body/div/div[2]/div/mat-datepicker-content/div[2]/mat-calendar/div/mat-multi-year-view/table/tbody/tr[6]/td[3]/button')
+            ## กดปุ่ม "2023"
+            year2024_select.click()
+        
+        time.sleep(2)
+
+        month_table = {'January': [2,1], 'February': [2,2], 'March': [2,3], 'April': [2,4], 'May': [3,1], 'June': [3,2], 'July': [3,3], 'August': [3,4], 'September': [4,1], 'October': [4,2], 'November': [4,3], 'December': [4,4]}
+        month_table = {1: [2,1], 2: [2,2], 3: [2,3], 4: [2,4], 5: [3,1], 6: [3,2], 7: [3,3], 8: [3,4], 9: [4,1], 10: [4,2], 11: [4,3], 12: [4,4]}
+        ## element ของปุ่ม "month"
+        JUN_select =  driver.find_element(By.XPATH, f'/html/body/div/div[2]/div/mat-datepicker-content/div[2]/mat-calendar/div/mat-year-view/table/tbody/tr[{month_table[month][0]}]/td[{month_table[month][1]}]/button')
+        ## กดปุ่ม "month"
+        JUN_select.click()
 
         time.sleep(2)
 
@@ -124,20 +156,42 @@ class RPA:
         search_Button = driver.find_element(By.XPATH, '//button[contains(text(), "ค้นหา")]')
         ## กดปุ่ม "ค้นหา"
         search_Button.click()
-    
-    def selectDay(self, date):
+
+        time.sleep(2)
+
+        months = {1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
+        # สร้าง element ปุ่ม "Export to Excel"
+        export_button = driver.find_element(By.XPATH, '/html/body/app-root/app-e-service-plan/div/div[2]/div[2]/div[2]/button')
+        ## กดปุ่ม "Export to Excel"
+        export_button.click()
+        time.sleep(2)
+
+        project_path = os.getcwd()
+        root_path = os.path.abspath(os.sep)
+        if 'Downloads' not in os.listdir("C:\\Users\\User\\"):
+            os.chdir(root_path)
+            os.chdir("D:\\")
+            os.chdir(".\\download")
+        else:
+            os.chdir("C:\\Users\\User\\Downloads")
+        
+        current_path = os.getcwd()
+        print(f'current_path : {current_path}')
+        download_list = os.listdir(current_path)
+        print(f'download_list : {download_list}')
+        if 'รายงานสรุปงาน_PM.csv' in download_list:
+            df_name = f'{date}_{months[month]}_{year}.csv'
+            print(f'Im gonna rename : {current_path}\\รายงานสรุปงาน_PM.csv')
+            os.rename(current_path + '\\รายงานสรุปงาน_PM.csv', current_path + f'\\{df_name}')
+            os.move(current_path + f'\\{df_name}', current_path + "\\water_inspection\\dataframe\\" + df_name)
+
+        os.chdir(root_path)
+        print(f'project_path : {project_path}')
+        os.chdir(project_path)
         # path หน้าตารางรวมแผนงาน
         table_path = "/html/body/app-root/app-e-service-plan/div/full-calendar/div[2]/div/table/tbody/tr/td/div/div/div/table/tbody/"
         now = datetime.now()
-        months = {1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
-        dMounths = {1:31, 2:28, 3:31, 4:30, 5:31, 6:30, 7:31, 8:31, 9:30, 10:31, 11:30, 12:31}
-        # current day : 14
-        current_day = now.day
-        # current month : June
-        current_months = now.month
-        # current year : 2024
-        current_year = now.year
-        # print(f"current_month : {months[current_months]}")
+        
 
         ##   row   column(day)            button                                                                                                             
         ## /tr[2]/   td[7]    /div/div[2]/div[1]/a
@@ -163,7 +217,7 @@ class RPA:
         time.sleep(2)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
 
-        return str(f'{date}_{months[current_months]}_{current_year}')
+        return str(f'{date}_{months[month]}_{year}')
     
     def getlabel(self, script_contents):
         tank_label = []
@@ -235,16 +289,20 @@ if __name__ == '__main__':
 
     try:
         loginPage = RPA(login_url)
-        driver = loginPage.getURL(window=False)
+        driver = loginPage.getURL(window=True)
         # driver.set_window_size(500, 850)
-        
-        ## หน้า login --> หน้าตารางรวมแผนงาน
-        loginPage.initialize(driver=driver)
 
-        time.sleep(3)
+        # zoom_level = "0.75"  # Zoom in to 150%
+        # driver.execute_script(f"document.body.style.zoom='{zoom_level}'")
         
-        ## เลือกวัน
-        date = loginPage.selectDay(date=1)
+        # เลือกวัน
+        day = 3
+        # เลือกเดือน
+        month = 7
+        # เลือกปี
+        year = 2024
+        ## หน้า login --> หน้าตารางรวมแผนงาน
+        date = loginPage.initialize(driver=driver,date=day, month=month, year=year)
         print(date)
         time.sleep(3)
 
@@ -266,7 +324,7 @@ if __name__ == '__main__':
         num_pic_list = loginPage.getList(num_pic_link_contents,'"', ' of ')
         num_pic_list = num_pic_list[0].split(' ')[2]
         print(f"number of img : {num_pic_list}")
-
+        
         driver.execute_script("window.scrollTo(0, 0)")
         time.sleep(3)
 
@@ -274,113 +332,155 @@ if __name__ == '__main__':
         # tr[1]/td[4]
         # path หน้าตารางแผนงาน ณ เดือนที่เลือก
         n = 1
-        sub_table_path = '/html/body/app-root/app-e-service-table/div/app-table-contract/div/table/tbody/'
-         ## element ของปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
-        pic_button = driver.find_element(By.XPATH, sub_table_path + f'tr[{n}]/td[4]')
-        ## กดปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
-        pic_button.click()
+        while n <= int(num_pic_list):
+            print(f"n = {n}")
 
-        time.sleep(15)
+            driver.execute_script(f"window.scrollTo(0, document.body.scrollHeight)")
+            time.sleep(2)
 
-        ## print html script ของหน้านี้
-        pic_link_contents = loginPage.getpageScript(driver=driver)
-        pic_list = loginPage.getList(pic_link_contents,'"', 'amazon')
-        # print(pic_list[1])
+            # สร้าง element ที่กำหนดจำนวน column
+            choose_column = driver.find_element(By.XPATH, '/html/body/app-root/app-e-service-table/div/mat-paginator/div/div/div[1]/mat-form-field/div[1]/div/div[2]/mat-select')
+            ## กดปุ่มที่กำหนดจำนวน column
+            choose_column.click()
+            time.sleep(3)
+        
+            # สร้าง element ที่กำหนดตารางเป็น 100 column 
+            hundred_column = driver.find_element(By.XPATH, '/html/body/div[1]/div[2]/div/div/mat-option[4]')
+            ## กดปุ่มที่กำหนดจำนวน column
+            hundred_column.click()
+            time.sleep(5)
 
-        ## หา work sap (ID)
-        work_sap = loginPage.getList(pic_link_contents, '"', 'Work SAP')
-        work_sap[0] = work_sap[0].replace(" ", "")
-        for i in range(len(work_sap[0])-12):
-            if '52000' in work_sap[0][i:i+12]:
+            driver.execute_script(f"window.scrollTo(0, 0)")
+            time.sleep(2)
+
+            # scroll หา element ของปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
+            scroll_height = driver.execute_script("return document.body.scrollHeight")
+            scroll_to_height = round((scroll_height * n) // int(num_pic_list))
+            print(f"scroll_height : {scroll_height}")
+            print(f"scroll_to_height : {scroll_to_height}")
+            driver.execute_script(f"window.scrollTo(0, {scroll_to_height})")
+            time.sleep(2)
+            # # /html/body/app-root/app-e-service-table/div/app-table-contract/div/table/tbody/tr[33]/td[4]
+            sub_table_path = '/html/body/app-root/app-e-service-table/div/app-table-contract/div/table/tbody/'
+            print(sub_table_path + f'tr[{n}]/td[4]')
+            try:
+                ## element ของปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
+                pic_button = driver.find_element(By.XPATH, sub_table_path + f'tr[{n}]/td[4]')
+                ## กดปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
+                pic_button.click()
+            except Exception as e:
+                print(f"Cannot find element no. {n}")
+                #print(e)
+                n += 1
+                continue
+
+            time.sleep(17)
+
+            ## print html script ของหน้านี้
+            pic_link_contents = loginPage.getpageScript(driver=driver)
+            pic_list = loginPage.getList(pic_link_contents,'"', 'amazon')
+            # print(pic_list[1])
+
+            ## หา work sap (ID)
+            work_sap = loginPage.getList(pic_link_contents, '"', 'Work SAP')
+            work_sap[0] = work_sap[0].replace(" ", "")
+            for i in range(len(work_sap[0])-12):
+                if '52000' in work_sap[0][i:i+12]:
+                    try:
+                        work_sap = str(int(work_sap[0][i:i+12]))
+                        break
+                    except:
+                        continue
+            print(work_sap)
+
+            ## หาชื่อของถัง
+            tank_name_trash = loginPage.getList(pic_link_contents, '"', 'NO.')
+            tank_name = []
+            for tank in tank_name_trash:
+                tank.replace("<div _ngcontent-hls-c96=", "")
+                tank.replace(">", "")
+                ch = 0
+                for i in tank:
+                    if i == '-':
+                        break
+                    else:
+                        ch += 1
+                print(f'tank : {tank}')
+                print(f'tank_new : {tank[:ch]}')
+                #tank.replace(tank, tank[:ch])
+                tank_name.append(tank[:ch])
+            print(tank_name)
+
+            ## หา label ของรูปภาพ
+            label  = loginPage.getlabel(pic_link_contents)
+            print("label : ", label)
+
+            pic_ch = 0
+            for i in range(len(tank_name)):        
+                ## save images
+                current_directory = os.getcwd()
+                pic_root_path = '.\\images\\'
+                date = date
+                work_sap = work_sap
+                t = tank_name[i]
+                sum_path = f"{pic_root_path}{date}\\{work_sap}\\{t}\\"
+                #sum_path = sum_path.replace("\\\\", "\\")
+                print(sum_path + "before\\")
                 try:
-                    work_sap = str(int(work_sap[0][i:i+12]))
-                    break
-                except:
-                    continue
-        print(work_sap)
+                    os.mkdir(f"{pic_root_path}{date}")
+                except Exception as e:
+                    print(f"you suck : {e}")
+                    pass
+                try:
+                    os.mkdir(f"{pic_root_path}{date}\\{work_sap}\\")
+                except Exception as e:
+                    print(f"you suck : {e}")
+                    pass
+                try:
+                    os.mkdir(f"{pic_root_path}{date}\\{work_sap}\\{t}\\")
+                except Exception as e:
+                    print(f"you suck : {e}")
+                    pass
+                try:
+                    os.mkdir(sum_path + "before\\")
+                except Exception as e:
+                    print(f"you suck : {e}")
+                    pass
+                try:
+                    os.mkdir(sum_path + "after\\")
+                except Exception as e:
+                    print(f"you suck : {e}")
+                    pass
+                # for url in pic_list:
+                #     # print(url)
+                #     loginPage.savePic(url, pic_root_path)
+                print(len(label[i][1][0]))
+                for j in range(len(label[i][1])):
+                    if j == 0:
+                        for k in label[i][1][j][1:]:
+                            loginPage.savePic(pic_list[pic_ch], sum_path + "before\\")
+                            pic_ch += 1 
+                    elif j == 1:
+                        for k in label[i][1][j][1:]:
+                            loginPage.savePic(pic_list[pic_ch], sum_path + "after\\")
+                            pic_ch += 1
 
-        ## หาชื่อของถัง
-        tank_name_trash = loginPage.getList(pic_link_contents, '"', 'NO.')
-        tank_name = []
-        for tank in tank_name_trash:
-            tank.replace("<div _ngcontent-hls-c96=", "")
-            tank.replace(">", "")
-            ch = 0
-            for i in tank:
-                if i == '-':
-                    break
-                else:
-                    ch += 1
-            print(f'tank : {tank}')
-            print(f'tank_new : {tank[:ch]}')
-            #tank.replace(tank, tank[:ch])
-            tank_name.append(tank[:ch])
-        print(tank_name)
+            # time.sleep(2)
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
+            time.sleep(2)
 
-        ## หา label ของรูปภาพ
-        label  = loginPage.getlabel(pic_link_contents)
-        print("label : ", label)
+            bank_len = len(tank_name)
+            # print(f"bank_len : {bank_len}")
 
-        pic_ch = 0
-        for i in range(len(tank_name)):        
-            ## save images
-            current_directory = os.getcwd()
-            pic_root_path = '.\\images\\'
-            date = date
-            work_sap = work_sap
-            t = tank_name[i]
-            sum_path = f"{pic_root_path}{date}\\{work_sap}\\{t}\\"
-            #sum_path = sum_path.replace("\\\\", "\\")
-            print(sum_path + "before\\")
-            try:
-                os.mkdir(f"{pic_root_path}{date}")
-            except Exception as e:
-                print(f"you suck : {e}")
-                pass
-            try:
-                os.mkdir(f"{pic_root_path}{date}\\{work_sap}\\")
-            except Exception as e:
-                print(f"you suck : {e}")
-                pass
-            try:
-                os.mkdir(f"{pic_root_path}{date}\\{work_sap}\\{t}\\")
-            except Exception as e:
-                print(f"you suck : {e}")
-                pass
-            try:
-                os.mkdir(sum_path + "before\\")
-            except Exception as e:
-                print(f"you suck : {e}")
-                pass
-            try:
-                os.mkdir(sum_path + "after\\")
-            except Exception as e:
-                print(f"you suck : {e}")
-                pass
-            # for url in pic_list:
-            #     # print(url)
-            #     loginPage.savePic(url, pic_root_path)
-            # print(len(label[i][1][0]))
-            # for j in range(len(label[i][1])):
-            #     if j == 0:
-            #         for k in label[i][1][j][1:]:
-            #             loginPage.savePic(pic_list[pic_ch], sum_path + "before\\")
-            #             pic_ch += 1 
-            #     elif j == 1:
-            #         for k in label[i][1][j][1:]:
-            #             loginPage.savePic(pic_list[pic_ch], sum_path + "after\\")
-            #             pic_ch += 1
-
-
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
-        time.sleep(2)
-
-        # สร้าง element ปุ่มย้อนกลับ
-        back_button = driver.find_element(By.XPATH, '/html/body/app-root/app-images/div/div/div[5]')
-        ## กดปุ่มย้อนกลับ
-        back_button.click()
-        time.sleep(2)
-
+            # สร้าง element ปุ่มย้อนกลับ
+            #/html/body/app-root/app-images/div/div/div[3]
+            back_button = driver.find_element(By.XPATH, f"/html/body/app-root/app-images/div/div/div[{bank_len + 1}]")
+            ## กดปุ่มย้อนกลับ
+            driver.execute_script("arguments[0].click();", back_button)
+            #back_button.click()
+            time.sleep(2)
+            print(f"n = {n} is done.")
+            n += 1
 
     except Exception as e:
         print(f"An error occurred: {e}")
