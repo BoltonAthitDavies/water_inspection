@@ -10,5 +10,5 @@ webdriver-manager
 streamlit
 plotly
 opencv-python
-opencv
+opencv==4.10.0
 
