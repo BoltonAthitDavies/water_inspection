@@ -8,5 +8,5 @@ scipy
 selenium
 webdriver-manager
 streamlit
-
+plotly
 
