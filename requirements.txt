@@ -9,4 +9,5 @@ selenium
 webdriver-manager
 streamlit
 plotly
+opencv
 
