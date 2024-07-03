@@ -13,6 +13,7 @@ from PIL import Image
 from io import BytesIO
 from datetime import datetime
 import os
+import shutil
 
 class RPA:
     def __init__(self, url):
@@ -164,7 +165,7 @@ class RPA:
         export_button = driver.find_element(By.XPATH, '/html/body/app-root/app-e-service-plan/div/div[2]/div[2]/div[2]/button')
         ## กดปุ่ม "Export to Excel"
         export_button.click()
-        time.sleep(2)
+        time.sleep(5)
 
         project_path = os.getcwd()
         root_path = os.path.abspath(os.sep)
@@ -178,12 +179,12 @@ class RPA:
         current_path = os.getcwd()
         print(f'current_path : {current_path}')
         download_list = os.listdir(current_path)
-        print(f'download_list : {download_list}')
+        print(f'hope : {"รายงานสรุปงาน_PM.csv" in download_list}')
         if 'รายงานสรุปงาน_PM.csv' in download_list:
             df_name = f'{date}_{months[month]}_{year}.csv'
             print(f'Im gonna rename : {current_path}\\รายงานสรุปงาน_PM.csv')
             os.rename(current_path + '\\รายงานสรุปงาน_PM.csv', current_path + f'\\{df_name}')
-            os.move(current_path + f'\\{df_name}', current_path + "\\water_inspection\\dataframe\\" + df_name)
+            shutil.move(current_path + f'\\{df_name}', project_path + "\\dataframe\\" + df_name)
 
         os.chdir(root_path)
         print(f'project_path : {project_path}')
@@ -192,7 +193,6 @@ class RPA:
         table_path = "/html/body/app-root/app-e-service-plan/div/full-calendar/div[2]/div/table/tbody/tr/td/div/div/div/table/tbody/"
         now = datetime.now()
         
-
         ##   row   column(day)            button                                                                                                             
         ## /tr[2]/   td[7]    /div/div[2]/div[1]/a
         ## หาวันแรกของเดือนนั้นๆ
@@ -296,7 +296,7 @@ if __name__ == '__main__':
         # driver.execute_script(f"document.body.style.zoom='{zoom_level}'")
         
         # เลือกวัน
-        day = 3
+        day = 5
         # เลือกเดือน
         month = 7
         # เลือกปี
@@ -322,8 +322,8 @@ if __name__ == '__main__':
         ## print html script ของหน้านี้
         num_pic_link_contents = loginPage.getpageScript(driver=driver)
         num_pic_list = loginPage.getList(num_pic_link_contents,'"', ' of ')
-        num_pic_list = num_pic_list[0].split(' ')[2]
-        print(f"number of img : {num_pic_list}")
+        num_pic = num_pic_list[0].split(' ')[2]
+        print(f"number of img : {num_pic}")
         
         driver.execute_script("window.scrollTo(0, 0)")
         time.sleep(3)
@@ -332,7 +332,7 @@ if __name__ == '__main__':
         # tr[1]/td[4]
         # path หน้าตารางแผนงาน ณ เดือนที่เลือก
         n = 1
-        while n <= int(num_pic_list):
+        while n <= int(num_pic):
             print(f"n = {n}")
 
             driver.execute_script(f"window.scrollTo(0, document.body.scrollHeight)")
@@ -355,7 +355,7 @@ if __name__ == '__main__':
 
             # scroll หา element ของปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
             scroll_height = driver.execute_script("return document.body.scrollHeight")
-            scroll_to_height = round((scroll_height * n) // int(num_pic_list))
+            scroll_to_height = round((scroll_height * n) // int(num_pic))
             print(f"scroll_height : {scroll_height}")
             print(f"scroll_to_height : {scroll_to_height}")
             driver.execute_script(f"window.scrollTo(0, {scroll_to_height})")

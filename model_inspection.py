@@ -87,10 +87,10 @@ def createDF(model ,date):
 
     data.to_csv(f".\\dataframe\\{date}_predict.csv", index=False)
 
-if __name__ == "__main__":
-    model = initialize_model()
-    date = "9_June_2024"
+# if __name__ == "__main__":
+#     model = initialize_model()
+#     date = "9_June_2024"
 
-    createDF(model, date)
+#     createDF(model, date)
     
-    tf.keras.backend.clear_session()
+#     tf.keras.backend.clear_session()

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import base64
 import plotly.express as px
-from image_scrapping import RPA
+from image_scrapping import *
 from model_inspection import *
 # from utils import show_code
 from urllib.error import URLError
@@ -20,65 +20,54 @@ def createDataset(day, month, year, window, switch):
     if switch == True:
         try:
             # driver.set_window_size(500, 850)
-
             # zoom_level = "0.75"  # Zoom in to 150%
             # driver.execute_script(f"document.body.style.zoom='{zoom_level}'")
-
             ## หน้า login --> หน้าตารางรวมแผนงาน
             date = loginPage.initialize(driver=driver,date=day, month=month, year=year)
             print(date)
             time.sleep(3)
-
             # สร้าง element ที่กำหนดจำนวน column
             choose_column = driver.find_element(By.XPATH, '/html/body/app-root/app-e-service-table/div/mat-paginator/div/div/div[1]/mat-form-field/div[1]/div/div[2]/mat-select')
             ## กดปุ่มที่กำหนดจำนวน column
             choose_column.click()
             time.sleep(3)
-
             # สร้าง element ที่กำหนดตารางเป็น 100 column 
             hundred_column = driver.find_element(By.XPATH, '/html/body/div[1]/div[2]/div/div/mat-option[4]')
             ## กดปุ่มที่กำหนดจำนวน column
             hundred_column.click()
             time.sleep(3)
-
             # หาจำนวนรูปภาพทั้งหมด
             ## print html script ของหน้านี้
             num_pic_link_contents = loginPage.getpageScript(driver=driver)
             num_pic_list = loginPage.getList(num_pic_link_contents,'"', ' of ')
-            num_pic_list = num_pic_list[0].split(' ')[2]
-            print(f"number of img : {num_pic_list}")
-
+            num_pic = num_pic_list[0].split(' ')[2]
+            print(f"number of img : {num_pic}")
             driver.execute_script("window.scrollTo(0, 0)")
             time.sleep(3)
-
             # row  column(pic button)
             # tr[1]/td[4]
             # path หน้าตารางแผนงาน ณ เดือนที่เลือก
             n = 1
-            while n <= int(num_pic_list):
+            # while n <= int(num_pic):
+            while n <= int(5):
                 print(f"n = {n}")
-
                 driver.execute_script(f"window.scrollTo(0, document.body.scrollHeight)")
                 time.sleep(2)
-
                 # สร้าง element ที่กำหนดจำนวน column
                 choose_column = driver.find_element(By.XPATH, '/html/body/app-root/app-e-service-table/div/mat-paginator/div/div/div[1]/mat-form-field/div[1]/div/div[2]/mat-select')
                 ## กดปุ่มที่กำหนดจำนวน column
                 choose_column.click()
                 time.sleep(3)
-
                 # สร้าง element ที่กำหนดตารางเป็น 100 column 
                 hundred_column = driver.find_element(By.XPATH, '/html/body/div[1]/div[2]/div/div/mat-option[4]')
                 ## กดปุ่มที่กำหนดจำนวน column
                 hundred_column.click()
                 time.sleep(5)
-
                 driver.execute_script(f"window.scrollTo(0, 0)")
                 time.sleep(2)
-
                 # scroll หา element ของปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
                 scroll_height = driver.execute_script("return document.body.scrollHeight")
-                scroll_to_height = round((scroll_height * n) // int(num_pic_list))
+                scroll_to_height = round((scroll_height * n) // int(num_pic))
                 print(f"scroll_height : {scroll_height}")
                 print(f"scroll_to_height : {scroll_to_height}")
                 driver.execute_script(f"window.scrollTo(0, {scroll_to_height})")
@@ -96,14 +85,11 @@ def createDataset(day, month, year, window, switch):
                     #print(e)
                     n += 1
                     continue
-
                 time.sleep(17)
-
                 ## print html script ของหน้านี้
                 pic_link_contents = loginPage.getpageScript(driver=driver)
                 pic_list = loginPage.getList(pic_link_contents,'"', 'amazon')
                 # print(pic_list[1])
-
                 ## หา work sap (ID)
                 work_sap = loginPage.getList(pic_link_contents, '"', 'Work SAP')
                 work_sap[0] = work_sap[0].replace(" ", "")
@@ -115,7 +101,6 @@ def createDataset(day, month, year, window, switch):
                         except:
                             continue
                 print(work_sap)
-
                 ## หาชื่อของถัง
                 tank_name_trash = loginPage.getList(pic_link_contents, '"', 'NO.')
                 tank_name = []
@@ -133,11 +118,9 @@ def createDataset(day, month, year, window, switch):
                     #tank.replace(tank, tank[:ch])
                     tank_name.append(tank[:ch])
                 print(tank_name)
-
                 ## หา label ของรูปภาพ
                 label  = loginPage.getlabel(pic_link_contents)
                 print("label : ", label)
-
                 pic_ch = 0
                 for i in range(len(tank_name)):        
                     ## save images
@@ -187,14 +170,11 @@ def createDataset(day, month, year, window, switch):
                             for k in label[i][1][j][1:]:
                                 loginPage.savePic(pic_list[pic_ch], sum_path + "after\\")
                                 pic_ch += 1
-
                 # time.sleep(2)
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
                 time.sleep(2)
-
                 bank_len = len(tank_name)
                 # print(f"bank_len : {bank_len}")
-
                 # สร้าง element ปุ่มย้อนกลับ
                 #/html/body/app-root/app-images/div/div/div[3]
                 back_button = driver.find_element(By.XPATH, f"/html/body/app-root/app-images/div/div/div[{bank_len + 1}]")
@@ -206,19 +186,17 @@ def createDataset(day, month, year, window, switch):
                 n += 1
         except Exception as e:
             print(f"An error occurred: {e}")
-
         finally:
             # Ensure the browser is closed even if an error occurs
             time.sleep(3)
             driver.quit()
     else:
-        print("Stop RPA")
         time.sleep(3)
         driver.quit()
+        print("Stop RPA")
 
 def data_frame_demo():
     @st.cache_data
-        
     def get_image_base64(image_path):
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode()
@@ -310,6 +288,7 @@ def data_frame_demo():
         return tank_name, tank_quantity
 
     try:
+    
         year_options = ["2023", "2024"]
         month_options = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
         day = {"January": 31, "February": 28, "March": 31, "April": 30, "May": 31, "June": 30, "July": 31, "August": 31, "September": 30, "October": 31, "November": 30, "December": 31}
@@ -402,19 +381,19 @@ def data_frame_demo():
 
 st.set_page_config(page_title="Water PM Project", page_icon="📊")
 st.markdown("# Test RPA")
+date = '11_June_2024'
+month = {'January':1, 'February':2, 'March':3, 'April':4, 'May':5, 'June':6, 'July':7, 'August':8, 'September':9, 'October':10, 'November':11, 'December':12}
+date_list = date.split("_")
+print(date_list)
+print(month[date_list[1]])
+model = initialize_model()
+
 if st.button('test RPA'):
-    createDataset(day = 4, month = 6, year = 2024, window = False, switch = True)
-    date = "9_June_2024"
-    month = {"January":1, "February":2, "March":3, "April":4, "May":5, "June":6, "July":7, "August":8, "September":9, "October":10, "November":11, "December":12}
-    date_list = date.split("_")
-    model = initialize_model()
-
+    createDataset(day = int(date_list[0]), month = month[date_list[1]], year = int(date_list[2]), window = True, switch = True)
     createDF(model, date)
-    
     tf.keras.backend.clear_session()
-
 if st.button('Stop RPA'):
-    createDataset(day = date[0], month = month[date[1]], year = date[2], window = False, switch = False)
+    createDataset(day = int(date_list[0]), month = month[date_list[1]], year = int(date_list[2]), window = False, switch = False)
 
 st.markdown("# Water PM Project")
 st.sidebar.header("Water PM Project")
