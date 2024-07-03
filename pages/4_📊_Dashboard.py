@@ -9,7 +9,7 @@ from PIL import Image
 import base64
 import plotly.express as px
 from image_scrapping import *
-from model_inspection import *
+from model_inspection_io import *
 # from utils import show_code
 from urllib.error import URLError
 
