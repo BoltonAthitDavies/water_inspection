@@ -289,22 +289,28 @@ def data_frame_demo():
         return tank_name, tank_quantity
 
     try:  
+        num_to_month = {"01":'January', '02':'February', '03':'March', '04':'April', '05':'May', '06':'June', '07':'July', '08':'August', '09':'September', '10':'October', '11':'November', '12':'December'}
         d = st.date_input("When's your birthday", value=None)
         st.write(d)
         d = str(d)
+        d = d.split('-')
+        if d[1][0] == '0':
+            day_option = d[2].replace('0', '')
+        else:
+            day_option = d[2]   
+        month_option = num_to_month[d[1]]
+        year_option = d[0]
 
-        year_options = ["2023", "2024"]
-        month_options = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-        day = {"January": 31, "February": 28, "March": 31, "April": 30, "May": 31, "June": 30, "July": 31, "August": 31, "September": 30, "October": 31, "November": 30, "December": 31}
+        # year_options = ["2023", "2024"]
+        # month_options = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+        # day = {"January": 31, "February": 28, "March": 31, "April": 30, "May": 31, "June": 30, "July": 31, "August": 31, "September": 30, "October": 31, "November": 30, "December": 31}
 
-        year_option = st.selectbox("Select year:", year_options)
-        month_option = st.selectbox("Select month:", month_options)
+        # year_option = st.selectbox("Select year:", year_options)
+        # month_option = st.selectbox("Select month:", month_options)
         
-        day_options = [i for i in range(1,day[month_option]+1)]
-        day_option = st.selectbox("Select day:", day_options)
+        # day_options = [i for i in range(1,day[month_option]+1)]
+        # day_option = st.selectbox("Select day:", day_options)
 
-        # # Display the selected option
-        # st.write("You selected:", selected_option)
 
         dfs_path = ".\\dataframe\\"
         dfs_list = os.listdir(dfs_path)
@@ -319,6 +325,7 @@ def data_frame_demo():
             branch_name, branch_quantity = get_data(predicted_id, 'branch')
             tank_names, tank_quantities = get_data(predicted_id, 'tank_name')
             predict_name, predict_quantity = get_data(predicted_id, 'predict')
+            cam_name, cam_quantity = get_data(predicted_id, 'Camera Position')
             
             tank_name = ['ถังน้ำดื่ม', 'ถังน้ำใช้']
             tank_quantity = [0, 0]
@@ -346,7 +353,8 @@ def data_frame_demo():
 
             id = pd.concat([id, pd.DataFrame(quariified_list, columns=['Quarified status'])], axis=1)
             
-            for i in range(len(id)):
+            print(len(branch_quantity))
+            for i in range(len(branch_quantity)):
                 name = predicted_id['name'][i]
                 tank = predicted_id['tank_name'][i]
                 state = predicted_id['predict'][i]
@@ -356,7 +364,13 @@ def data_frame_demo():
                 if state_main == 'unquarified':
                     c = predicted_id[predicted_id['branch'] == branch_main]
                     d = c[c['predict'] == 'ไม่ถูกต้อง']
-                    #e = d[d['time'] == 'after']
+                    if 'ถังน้ำดื่ม' in tank:
+                        #drink_list.append(name)
+                        drink_list.append(name)
+                    elif 'ถังน้ำใช้' in tank:
+                        used_list.append(name)
+                    #         drink_list.append('+')
+                    #         used_list.append('+')
                 else:
                     drink_list.append('-')
                     used_list.append('-')
@@ -381,13 +395,12 @@ def data_frame_demo():
             else:
                 image_name = ''
 
-            # tank_name, tank_quantity = get_tank_data(predictedDF_path)
-            st.write(f"### Image Dataset {df_path[:len(df_path)-3]}", predicted_id)
+            #st.write(f"### Image Dataset {df_path[:len(df_path)-3]}", predicted_id)
 
             for i in range(2):
                 st.write("")
 
-            # Create the bar chart with customizations
+            ############ Create the bar chart with customizations
             tank_dataFrame = pd.DataFrame({
                 'Tank': tank_name,
                 'Amount': tank_quantity
@@ -404,7 +417,7 @@ def data_frame_demo():
             # Display the chart in Streamlit
             st.altair_chart(bar_chart, use_container_width=True)
             
-            # Create the bar chart with customizations
+            ############ Create the bar chart with customizations
             branch_dataFrame = pd.DataFrame({
                 'branch': branch_name,
                 'Amount': branch_quantity
@@ -421,6 +434,23 @@ def data_frame_demo():
             # Display the chart in Streamlit
             st.altair_chart(bar_chart, use_container_width=True)
 
+            ############ Create camera position pie chart with customizations
+            data = pd.DataFrame({
+                'camera_state': cam_name,
+                'Amount': cam_quantity
+            })
+
+            color_discrete_map = {
+                '+': 'white',
+                '-': 'gray',
+            }
+
+            # Create the pie chart
+            fig = px.pie(data, values='Amount', names='camera_state', title='camera position Pie Chart',color='camera_state',
+                         color_discrete_map=color_discrete_map)
+            st.plotly_chart(fig)
+
+            ############ Create Prediction pie chart with customizations
             data = pd.DataFrame({
                 'Prediction': predict_name,
                 'Amount': predict_quantity
@@ -432,7 +462,7 @@ def data_frame_demo():
             }
 
             # Create the pie chart
-            fig = px.pie(data, values='Amount', names='Prediction', title='Prediction Distribution',color='Prediction',
+            fig = px.pie(data, values='Amount', names='Prediction', title='Prediction Pie Chart',color='Prediction',
                          color_discrete_map=color_discrete_map)
             st.plotly_chart(fig)
             
@@ -469,9 +499,10 @@ sday_option = st.selectbox("RPA Select day:", sday_options)
 
 if st.button('test RPA'):
     #createDataset(day = int(date_list[0]), month = month[date_list[1]], year = int(date_list[2]), window = True, switch = True)
-    model = initialize_model()
+    model = initialize_NN()
+    cam_model = initialize_EfficientNetModel('.\\weight\\camPosweight.pt')
     createDataset(day = int(sday_option), month = month[smonth_option], year = int(syear_option), window = False, switch = True)
-    createDF(model, f'{sday_option}_{smonth_option}_{syear_option}')
+    createDF(model,cam_model, f'{sday_option}_{smonth_option}_{syear_option}')
     tf.keras.backend.clear_session()
 if st.button('Stop RPA'):
     createDataset(day = int(sday_option), month = month[smonth_option], year = int(syear_option), window = False, switch = False)
