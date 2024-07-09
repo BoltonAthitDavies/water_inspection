@@ -1,4 +1,5 @@
 import streamlit as st
+import datetime
 import inspect
 import textwrap
 import pandas as pd
@@ -9,7 +10,7 @@ from PIL import Image
 import base64
 import plotly.express as px
 from image_scrapping import *
-from model_inspection_io import *
+from model_inspection import *
 # from utils import show_code
 from urllib.error import URLError
 
@@ -287,8 +288,11 @@ def data_frame_demo():
 
         return tank_name, tank_quantity
 
-    try:
-    
+    try:  
+        d = st.date_input("When's your birthday", value=None)
+        st.write(d)
+        d = str(d)
+
         year_options = ["2023", "2024"]
         month_options = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
         day = {"January": 31, "February": 28, "March": 31, "April": 30, "May": 31, "June": 30, "July": 31, "August": 31, "September": 30, "October": 31, "November": 30, "December": 31}
@@ -308,30 +312,81 @@ def data_frame_demo():
         predictedDF_path = f"{day_option}_{month_option}_{year_option}_predict.csv"
 
         if df_path in dfs_list:
-        
             id = get_pic_data(dfs_path + df_path) 
             predicted_id = get_pic_data(dfs_path + predictedDF_path).sort_index()
-            tank_name, tank_quantity = get_data(predicted_id, 'tank_name')
+
+            image_name, image_quantity = get_data(predicted_id, 'name')
+            branch_name, branch_quantity = get_data(predicted_id, 'branch')
+            tank_names, tank_quantities = get_data(predicted_id, 'tank_name')
+            predict_name, predict_quantity = get_data(predicted_id, 'predict')
+            
+            tank_name = ['ถังน้ำดื่ม', 'ถังน้ำใช้']
+            tank_quantity = [0, 0]
+            for names in tank_names:
+                if 'ถังน้ำดื่ม' in names:
+                    tank_quantity[0] += tank_quantities[tank_names.index(names)]
+                elif 'ถังน้ำใช้' in names:
+                    tank_quantity[1] += tank_quantities[tank_names.index(names)]
+
+            image_name_list = []
+            quariified_list = []
+            drink_list = []
+            used_list = []
+            unquarified_branch = predicted_id[predicted_id['predict'] == 'ไม่ถูกต้อง']['branch'].unique()
+            for i in range(len(predicted_id)):
+                name = predicted_id['name'][i]
+                prediction = predicted_id['predict'][i]
+                branch = predicted_id['branch'][i]
+
+                image_name_list.append(f'{name} : {prediction}')
+                if branch in unquarified_branch:
+                    quariified_list.append(f'unquarified')
+                else:
+                    quariified_list.append(f'quarified')
+
+            id = pd.concat([id, pd.DataFrame(quariified_list, columns=['Quarified status'])], axis=1)
+            
+            for i in range(len(id)):
+                name = predicted_id['name'][i]
+                tank = predicted_id['tank_name'][i]
+                state = predicted_id['predict'][i]
+                state_main = id['Quarified status'][i]
+                branch_main = id['ชื่อร้าน'][i]
+                branch_predicted = predicted_id['branch'][i]
+                if state_main == 'unquarified':
+                    c = predicted_id[predicted_id['branch'] == branch_main]
+                    d = c[c['predict'] == 'ไม่ถูกต้อง']
+                    #e = d[d['time'] == 'after']
+                else:
+                    drink_list.append('-')
+                    used_list.append('-')
+                        
+            id = pd.concat([id, pd.DataFrame(drink_list, columns=['ถังน้ำดื่ม'])], axis=1)
+            id = pd.concat([id, pd.DataFrame(used_list, columns=['ถังน้ำใช้'])], axis=1)
             st.write(f"### PM Attendance Plan {df_path[:len(df_path)-4]}", id.sort_index())
 
             get_name = predicted_id['name'].unique()
-            image_name = st.text_input("Enter image name", max_chars=500)
-            if st.button('Visualize'):
-                if image_name in get_name:
-                    info = predicted_id[predicted_id['name'] == image_name]
-                    # st.write("You entered:", info)
-                    st.write("Model Prediction :", info['predict'].values[0]) 
-                    path = f".\\images\\{df_path[:len(df_path)-4]}\\" + str(info['id'].values[0]) + "\\" + info['tank_name'].values[0] + "\\" + info['time'].values[0] + "\\" + image_name
-                    #path = 'C:\\Users\\User\\water_inspection\\images\\1_June_2024\\520003758840\\NO.1 การตรวจสอบคุณภาพน้ำประปา \\after\\2024-06-03_0e4771ec-5fcc-4fc6-8d7c-32d68bb7303e.jpg.jpg'
-                    image_base64 = get_image_base64(path)
-                    display_image_popout(image_base64)
-                else:
-                    image_name = ''
+            # image_name = st.text_input("Enter image name", max_chars=200)
+            image_name = st.selectbox("Enter image name :", ['None'] + image_name_list)
+            image_name = image_name.split(' : ')[0]
+            # if st.button('Visualize'):
+            if image_name in get_name:
+                info = predicted_id[predicted_id['name'] == image_name]
+                # st.write("You entered:", info)
+                st.write("Model Prediction :", info['predict'].values[0]) 
+                path = f".\\images\\{df_path[:len(df_path)-4]}\\" + str(info['id'].values[0]) + "\\" + info['tank_name'].values[0] + "\\" + 'after' + "\\" + image_name
+                #path = 'C:\\Users\\User\\water_inspection\\images\\1_June_2024\\520003758840\\NO.1 การตรวจสอบคุณภาพน้ำประปา \\after\\2024-06-03_0e4771ec-5fcc-4fc6-8d7c-32d68bb7303e.jpg.jpg'
+                image_base64 = get_image_base64(path)
+                display_image_popout(image_base64)
+            else:
+                image_name = ''
 
             # tank_name, tank_quantity = get_tank_data(predictedDF_path)
             st.write(f"### Image Dataset {df_path[:len(df_path)-3]}", predicted_id)
-            for i in range(5):
+
+            for i in range(2):
                 st.write("")
+
             # Create the bar chart with customizations
             tank_dataFrame = pd.DataFrame({
                 'Tank': tank_name,
@@ -349,7 +404,23 @@ def data_frame_demo():
             # Display the chart in Streamlit
             st.altair_chart(bar_chart, use_container_width=True)
             
-            predict_name, predict_quantity = get_data(predicted_id, 'predict')
+            # Create the bar chart with customizations
+            branch_dataFrame = pd.DataFrame({
+                'branch': branch_name,
+                'Amount': branch_quantity
+            })
+            bar_chart = alt.Chart(branch_dataFrame).mark_bar().encode(
+                x=alt.X('branch', sort='-y'),  # Sort bars by amount
+                y='Amount',
+                color='branch',  # Color bars by fruit
+                tooltip=['branch', 'Amount']  # Add tooltips
+            ).properties(
+                title=f'Amount of branch = {len(branch_quantity)}'
+            ).interactive()  # Make the chart interactive
+
+            # Display the chart in Streamlit
+            st.altair_chart(bar_chart, use_container_width=True)
+
             data = pd.DataFrame({
                 'Prediction': predict_name,
                 'Amount': predict_quantity
@@ -359,7 +430,6 @@ def data_frame_demo():
                 'ถูกต้อง': 'green',
                 'ไม่ถูกต้อง': 'red',
             }
-
 
             # Create the pie chart
             fig = px.pie(data, values='Amount', names='Prediction', title='Prediction Distribution',color='Prediction',
@@ -381,19 +451,30 @@ def data_frame_demo():
 
 st.set_page_config(page_title="Water PM Project", page_icon="📊")
 st.markdown("# Test RPA")
-date = '11_June_2024'
+
+syear_options = ["2023", "2024"]
+smonth_options = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+sday = {"January": 31, "February": 28, "March": 31, "April": 30, "May": 31, "June": 30, "July": 31, "August": 31, "September": 30, "October": 31, "November": 30, "December": 31}
 month = {'January':1, 'February':2, 'March':3, 'April':4, 'May':5, 'June':6, 'July':7, 'August':8, 'September':9, 'October':10, 'November':11, 'December':12}
-date_list = date.split("_")
-print(date_list)
-print(month[date_list[1]])
-model = initialize_model()
+syear_option = st.selectbox("RPA Select year:", syear_options)
+smonth_option = st.selectbox("RPA Select month:", smonth_options)
+
+sday_options = [i for i in range(1,sday[smonth_option]+1)]
+sday_option = st.selectbox("RPA Select day:", sday_options)
+
+# date = '11_June_2024'
+# date_list = date.split("_")
+# print(date_list)
+# print(month[date_list[1]])
 
 if st.button('test RPA'):
-    createDataset(day = int(date_list[0]), month = month[date_list[1]], year = int(date_list[2]), window = True, switch = True)
-    createDF(model, date)
+    #createDataset(day = int(date_list[0]), month = month[date_list[1]], year = int(date_list[2]), window = True, switch = True)
+    model = initialize_model()
+    createDataset(day = int(sday_option), month = month[smonth_option], year = int(syear_option), window = False, switch = True)
+    createDF(model, f'{sday_option}_{smonth_option}_{syear_option}')
     tf.keras.backend.clear_session()
 if st.button('Stop RPA'):
-    createDataset(day = int(date_list[0]), month = month[date_list[1]], year = int(date_list[2]), window = False, switch = False)
+    createDataset(day = int(sday_option), month = month[smonth_option], year = int(syear_option), window = False, switch = False)
 
 st.markdown("# Water PM Project")
 st.sidebar.header("Water PM Project")
