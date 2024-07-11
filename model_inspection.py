@@ -81,11 +81,22 @@ def createDF(model, camPosmodel, date):
     excel = pd.read_csv(f".\\dataframe\\{date}.csv")
     for id in os.listdir(f".\\images\\{date}\\"):
         for tank in os.listdir(f".\\images\\{date}\\" + id):
+            if 'ถังน้ำดื่ม' in tank:
+                j = 1
+            elif 'ถังน้ำใช้' in tank:
+                j = 2
+            else:
+                j = 0
             for time in os.listdir(f".\\images\\{date}\\" + id + "\\" + tank):
+                i = 0
                 for img in os.listdir(f".\\images\\{date}\\" + id + "\\" + tank + "\\" + time):
                     os.chdir(f".\\images\\{date}\\" + id + "\\" + tank + "\\" + time)
+                    # os.rename(current_file_name, new_file_name)
+                    new_name = f"{excel[excel['หมายเลขงาน'] == int(id)].iloc[0,2]}_tank{j}_{i}.jpg".replace(" ", "")
+                    os.rename(img, new_name)
                     print(f".\\images\\{date}\\" + id + "\\" + tank + "\\" + time)
-                    pic = cv2.imread(img)    
+                    print(new_name)
+                    pic = cv2.imread(new_name)    
                     pic = cv2.resize(pic, (256,256))
                     # pic = cv2.resize(pic, (224,224))
                     pic = np.array([pic])
@@ -107,19 +118,29 @@ def createDF(model, camPosmodel, date):
 
                             # if ('ถังน้ำดื่ม' in tank) or ('ถังน้ำใช้' in tank):
                             predict_list.append(ans)
-                            name_list.append(img)
+                            name_list.append(new_name)
                             id_list.append(id)
                             shopBranch_list.append(excel[excel['หมายเลขงาน'] == int(id)].iloc[0,3])
+                            # if 'ถังน้ำดื่ม' in tank:
+                            #     tank_name_list.append('ถังน้ำดื่ม')
+                            # if 'ถังน้ำใช้' in tank:
+                            #     tank_name_list.append('ถังน้ำใช้')
                             tank_name_list.append(tank)
                             camPos_list.append('+')
                         else:
-                            predict_list.append(None)
-                            name_list.append(img)
+                            predict_list.append('มุมกล้องไม่ถูกต้อง')
+                            name_list.append(new_name)
                             id_list.append(id)
                             shopBranch_list.append(excel[excel['หมายเลขงาน'] == int(id)].iloc[0,3])
+                            # if 'ถังน้ำดื่ม' in tank:
+                            #     tank_name_list.append('ถังน้ำดื่ม')
+                            # if 'ถังน้ำใช้' in tank:
+                            #     tank_name_list.append('ถังน้ำใช้')
                             tank_name_list.append(tank)
                             camPos_list.append('-')
                     os.chdir(f"..\\..\\..\\..\\..\\")
+                    i += 1
+                j += 1
 
     data = pd.DataFrame({
         'name': name_list,
@@ -138,7 +159,7 @@ if __name__ == "__main__":
     # model = initialize_model()
     model = initialize_NN()
     camPos_model = initialize_EfficientNetModel('.\\weight\\camPosweight.pt')
-    date = "11_June_2024"
+    date = "1_June_2024"
 
     createDF(model,camPos_model, date)
     
