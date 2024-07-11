@@ -70,11 +70,12 @@ def initialize_EfficientNetModel(path):
 def initialize_NN():
     new_model = load_model('.\\weight\\pmfinal.h5')
     return new_model
-
+# C:\Users\User\water_inspection\weight
 def createDF(model, camPosmodel, date):
     name_list = []
     id_list = []
     tank_name_list = []
+    tank_list = []
     camPos_list = []
     predict_list = []
     shopBranch_list = []
@@ -121,10 +122,10 @@ def createDF(model, camPosmodel, date):
                             name_list.append(new_name)
                             id_list.append(id)
                             shopBranch_list.append(excel[excel['หมายเลขงาน'] == int(id)].iloc[0,3])
-                            # if 'ถังน้ำดื่ม' in tank:
-                            #     tank_name_list.append('ถังน้ำดื่ม')
-                            # if 'ถังน้ำใช้' in tank:
-                            #     tank_name_list.append('ถังน้ำใช้')
+                            if 'ถังน้ำดื่ม' in tank:
+                                tank_list.append('ถังน้ำดื่ม')
+                            if 'ถังน้ำใช้' in tank:
+                                tank_list.append('ถังน้ำใช้')
                             tank_name_list.append(tank)
                             camPos_list.append('+')
                         else:
@@ -132,10 +133,10 @@ def createDF(model, camPosmodel, date):
                             name_list.append(new_name)
                             id_list.append(id)
                             shopBranch_list.append(excel[excel['หมายเลขงาน'] == int(id)].iloc[0,3])
-                            # if 'ถังน้ำดื่ม' in tank:
-                            #     tank_name_list.append('ถังน้ำดื่ม')
-                            # if 'ถังน้ำใช้' in tank:
-                            #     tank_name_list.append('ถังน้ำใช้')
+                            if 'ถังน้ำดื่ม' in tank:
+                                tank_list.append('ถังน้ำดื่ม')
+                            if 'ถังน้ำใช้' in tank:
+                                tank_list.append('ถังน้ำใช้')
                             tank_name_list.append(tank)
                             camPos_list.append('-')
                     os.chdir(f"..\\..\\..\\..\\..\\")
@@ -146,6 +147,7 @@ def createDF(model, camPosmodel, date):
         'name': name_list,
         'id': id_list,
         'branch': shopBranch_list,
+        'tank': tank_list,
         'tank_name': tank_name_list,
         'Camera Position': camPos_list,
         "predict": predict_list
