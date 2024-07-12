@@ -161,7 +161,7 @@ if __name__ == "__main__":
     # model = initialize_model()
     model = initialize_NN()
     camPos_model = initialize_EfficientNetModel('.\\weight\\camPosweight.pt')
-    date = "1_June_2024"
+    date = "5_July_2024"
 
     createDF(model,camPos_model, date)
     

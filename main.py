@@ -2,13 +2,14 @@ import streamlit as st
 import datetime
 import inspect
 import textwrap
+import time
 import pandas as pd
 import altair as alt
 import os
 import matplotlib.pyplot as plt
 from PIL import Image
 import base64
-import plotly.express as px
+import plotly.express as px 
 from image_scrapping import *
 from model_inspection import *
 # from utils import show_code
@@ -198,10 +199,12 @@ def createDataset(day, month, year, window, switch):
 
 def data_frame_demo():
     @st.cache_data
+    # convert image to base64
     def get_image_base64(image_path):
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode()
 
+    # display image on web
     def display_image_popout(image_path):
         st.markdown(
             f"""
@@ -270,11 +273,12 @@ def data_frame_demo():
             unsafe_allow_html=True,
         )
 
+    # get data from csv file
     def get_pic_data(path):
         df = pd.read_csv(path)
         return df
     
-
+    # get data from dataframe (data unique and data quantity)
     def get_data(df, column):
         # pm[pm['tank_name'] == 'NO.1 ถังน้ำดื่ม ']['tank_name'].count()
         tank_name = []
@@ -288,7 +292,8 @@ def data_frame_demo():
 
         return tank_name, tank_quantity
 
-    try:  
+    try:
+        # สร้าง date dropdown
         num_to_month = {"01":'January', '02':'February', '03':'March', '04':'April', '05':'May', '06':'June', '07':'July', '08':'August', '09':'September', '10':'October', '11':'November', '12':'December'}
         d = st.date_input("When's your birthday", value=None)
         st.write(d)
@@ -316,22 +321,28 @@ def data_frame_demo():
         # day_options = [i for i in range(1,day[month_option]+1)]
         # day_option = st.selectbox("Select day:", day_options)
 
-
+        # สร้างตัวแปร dataset path
         dfs_path = ".\\dataframe\\"
         dfs_list = os.listdir(dfs_path)
         df_path = f"{day_option}_{month_option}_{year_option}.csv"
         predictedDF_path = f"{day_option}_{month_option}_{year_option}_predict.csv"
 
+        # สร้าง dataset จาก csv file
         if df_path in dfs_list:
+
+            # สร้าง dataset จาก csv file (ที่มาจาก RPA)
             id = get_pic_data(dfs_path + df_path) 
+            # สร้าง dataset จาก csv file (ที่มีการ predict)
             predicted_id = get_pic_data(dfs_path + predictedDF_path).sort_index()
 
+            # สร้างตัวแปรเพื่อเก็บข้อมูล column ต่างๆ
             image_name, image_quantity = get_data(predicted_id, 'name')
             branch_name, branch_quantity = get_data(predicted_id, 'branch')
             tank_names, tank_quantities = get_data(predicted_id, 'tank_name')
             predict_name, predict_quantity = get_data(predicted_id, 'predict')
             cam_name, cam_quantity = get_data(predicted_id, 'Camera Position')
             
+            # สร้างตัวแปรเพื่อเก็บข้อมูลจำนวนถังน้ำดื่ม และ ถังน้ำใช้
             tank_name = ['ถังน้ำดื่ม', 'ถังน้ำใช้']
             tank_quantity = [0, 0]
             for names in tank_names:
@@ -340,12 +351,14 @@ def data_frame_demo():
                 elif 'ถังน้ำใช้' in names:
                     tank_quantity[1] += tank_quantities[tank_names.index(names)]
 
-            image_name_list = []
-            quariified_list = []
+            # สร้างตัวแปรเพื่อเก็บข้อมูล (list)
+            quarified_list = []
             drink_list = []
             used_list = []
             ngCam_list = []
+            image_name_list = []
             
+            # สร้าง column สำหรับเก็บข้อมูลสถานะมาตรฐานและจำนวนถังน้ำดื่ม
             quarified_branch = predicted_id[predicted_id['predict'] == 'ถูกต้อง']['branch'].unique()
             unquarified_branch = predicted_id[predicted_id['predict'] == 'ไม่ถูกต้อง']['branch'].unique()
             ng_camPos = predicted_id[predicted_id['Camera Position'] == '-']['branch'].unique()
@@ -356,77 +369,144 @@ def data_frame_demo():
                         name = name.replace('tank1', 'ถังน้ำดื่ม')
                     if 'tank2' in name:
                         name = name.replace('tank2', 'ถังน้ำใช้')
+                    # สร้าง list เก็บข้อมูลชื่อร้านสำหรับ dropdown
                     prediction = predicted_id[predicted_id['branch'] == branch]['predict'].values[j]
                     image_name_list.append(f'{name} : {prediction}')
-                    
-                # branch = predicted_id['branch'][i]
+
                 if branch in ng_camPos:
-                    quariified_list.append(f'มุมกล้องไม่ถูกต้อง')
+                    quarified_list.append(f'มุมกล้องไม่ถูกต้อง')
                 elif branch in unquarified_branch:
-                    quariified_list.append(f'unquarified')
+                    quarified_list.append(f'unquarified')
                 elif branch in quarified_branch:
-                    quariified_list.append(f'quarified')
+                    quarified_list.append(f'quarified')
                 else:
-                    quariified_list.append(f'None')
+                    quarified_list.append(f'None')
 
-            id = pd.concat([id, pd.DataFrame(quariified_list, columns=['Quarified status'])], axis=1)
+            # รวบ column เข้ากับ dataframe (id)
+            id = pd.concat([id, pd.DataFrame(quarified_list, columns=['Quarified status'])], axis=1)
             
+            # สร้าง column จำนวนถังน้ำดื่ม, ถังน้ำใช้และรูปถ่ายที่มีมุมกล้องไม่ถูกต้อง
             for i in range(len(branch_name)):
-                if 'มุมกล้องไม่ถูกต้อง' == id['Quarified status'][i]:
-                    ngCam1_addOn = predicted_id[predicted_id['branch'] == branch_name[i]]
-                    ngCam_addOn = ngCam1_addOn[ngCam1_addOn['Camera Position'] == '-']['Camera Position'].count()
-                    print(f"hope {i} : {id['Quarified status'][i]}, {branch_name[i]}, {ngCam_addOn}")
-                    drink_list.append(None)
-                    used_list.append(None)
-                    ngCam_list.append(ngCam_addOn)
-                elif 'unquarified' == id['Quarified status'][i]:
-                    print(f"hope {i} : {id['Quarified status'][i]}")
-                    tank_addOn1 = predicted_id[predicted_id['branch'] == branch_name[i]][predicted_id['predict'] == 'ไม่ถูกต้อง']['predict'].count()
-                    tank_addOn2 = predicted_id[predicted_id['branch'] == branch_name[i]][predicted_id['predict'] == 'ไม่ถูกต้อง']['predict'].count()
-                    drink_list.append(tank_addOn1)
-                    used_list.append(tank_addOn2)
-                    ngCam_list.append(None)
+                # print(id['ชื่อร้าน'][i])
+                if 'quarified' == id['Quarified status'][i]:
+                    # print(f"hope {i} : {id['Quarified status'][i]}, {id['ชื่อร้าน'][i]}")
+                    drink_list.append(0)
+                    used_list.append(0)
+                    ngCam_list.append(0)
                 else:
-                    print(f"hope {i} : {id['Quarified status'][i]}")
-                    drink_list.append(None)
-                    used_list.append(None)
-                    ngCam_list.append(None)
+                    ngCam1_addOn = predicted_id[predicted_id['branch'] == id['ชื่อร้าน'][i]]
+                    ngCam_addOn = ngCam1_addOn[ngCam1_addOn['Camera Position'] == '-']['Camera Position'].count()
+                    # print(f"hope {i} : {id['Quarified status'][i]}, {id['ชื่อร้าน'][i]}, {ngCam_addOn}")
 
-            print(len(branch_name))
-            print(f"drink_list : {len(drink_list)}")
-            print(f"used_list : {len(used_list)}")
-            print(f"ngCamlist : {len(ngCam_list)}")
+                    addOn1 = predicted_id[predicted_id['branch'] == id['ชื่อร้าน'][i]]
+                    addOn2 = addOn1[addOn1['predict'] == 'ไม่ถูกต้อง']
+                    # print(addOn1)
+                    # print("################################################")
+                    tank_addOn1 = addOn2[addOn2['tank'] == 'ถังน้ำใช้']['predict'].count()
+                    tank_addOn2 = addOn2[addOn2['tank'] == 'ถังน้ำดื่ม']['predict'].count()
+                    #print(f"hope {i} : {id['Quarified status'][i]}, {id['ชื่อร้าน'][i]}")
+                    ngCam_list.append(ngCam_addOn)
+                    used_list.append(tank_addOn1)
+                    drink_list.append(tank_addOn2)
+
+                # if 'มุมกล้องไม่ถูกต้อง' == id['Quarified status'][i]:
+                #     ngCam1_addOn = predicted_id[predicted_id['branch'] == id['ชื่อร้าน'][i]]
+                #     ngCam_addOn = ngCam1_addOn[ngCam1_addOn['Camera Position'] == '-']['Camera Position'].count()
+                #     # print(f"hope {i} : {id['Quarified status'][i]}, {id['ชื่อร้าน'][i]}, {ngCam_addOn}")
+                #     drink_list.append(None)
+                #     used_list.append(None)
+                #     ngCam_list.append(ngCam_addOn)
+                # if 'unquarified' == id['Quarified status'][i]:
+                #     addOn1 = predicted_id[predicted_id['branch'] == id['ชื่อร้าน'][i]]
+                #     addOn2 = addOn1[addOn1['predict'] == 'ไม่ถูกต้อง']
+                #     print(addOn1)
+                #     print("################################################")
+                #     tank_addOn1 = addOn2[addOn2['tank'] == 'ถังน้ำใช้']['predict'].count()
+                #     tank_addOn2 = addOn2[addOn2['tank'] == 'ถังน้ำดื่ม']['predict'].count()
+                #     #print(f"hope {i} : {id['Quarified status'][i]}, {id['ชื่อร้าน'][i]}")
+                #     used_list.append(tank_addOn1)
+                #     drink_list.append(tank_addOn2)
+                #     ngCam_list.append(None)
+
+            # print(len(branch_name))
+            # print(f"drink_list : {len(drink_list)}")
+            # print(f"used_list : {len(used_list)}")
+            # print(f"ngCamlist : {len(ngCam_list)}")
+
+            # รวบ column เข้ากับ dataframe (id)
             id = pd.concat([id, pd.DataFrame(drink_list, columns=['ถังน้ำดื่ม'])], axis=1)
             id = pd.concat([id, pd.DataFrame(used_list, columns=['ถังน้ำใช้'])], axis=1)
             id = pd.concat([id, pd.DataFrame(ngCam_list, columns=['มุมกล้องไม่ถูกต้อง'])], axis=1)
+            
+            # แสดง dataframe (id) ที่สร้างขึ้น web
             st.write(f"### PM Attendance Plan {df_path[:len(df_path)-4]}", id.sort_index())
 
-            get_name = predicted_id['name'].unique()
-            # image_name = st.text_input("Enter image name", max_chars=200)
-            image_name = st.selectbox("Enter image name :", ['None'] + image_name_list)
+            # แสดงข้อมูลรูปภาพ
+            st.write(f"### Image Visualization")
+            # สร้าง dropdown สำหรับเลือกชื่อร้าน
+            shop_id = st.multiselect(
+                    "รหัสร้าน",
+                    id['รหัสร้าน'])
+            # สร้าง dropdown สำหรับเลือกสถานะมาตรฐาน
+            quarified_id = st.multiselect(
+                    "สถานะมาตรฐาน",
+                    ['มุมกล้องไม่ถูกต้อง', 'ถูกต้อง', 'ไม่ถูกต้อง'],
+                    ["ถูกต้อง"])
+            
+            #print(f'image name list : {image_name_list}')
+
+            image_name_list_shopid = []
+            image_name_quarified = []
+            for imgname in image_name_list:
+                for filter in shop_id:
+                    if (filter in imgname):
+                        image_name_list_shopid.append(imgname)
+            
+            # print(f'image name list shopid : {image_name_list_shopid}')
+
+            if (image_name_list_shopid == []):
+                image_name_list_shopid = image_name_list
+
+            for imgname in image_name_list_shopid:
+                img = imgname.split(' : ')[1]
+                for filter in quarified_id:
+                    if (filter == img):
+                        image_name_quarified.append(imgname)
+            
+            if (image_name_quarified == []) and (image_name_list_shopid == []):
+                image_name_quarified = image_name_list
+            elif (image_name_quarified == []) and (image_name_list_shopid != []):
+                image_name_quarified = image_name_list_shopid
+
+            #print(f'image name quarified : {image_name_quarified}')
+
+            # สร้าง dropdown สำหรับเลือกชื่อรูปภาพ
+            image_name = st.selectbox("Enter image name :", ['None'] + image_name_quarified)
             image_name = image_name.split(' : ')[0]
+            get_name = predicted_id['name'].unique()
+
             if 'ถังน้ำดื่ม' in image_name:
                 image_name = image_name.replace('ถังน้ำดื่ม', 'tank1')
             if 'ถังน้ำใช้' in image_name:
                 image_name = image_name.replace('ถังน้ำใช้', 'tank2')
-            # if st.button('Visualize'):
             if image_name in get_name:
-                print(image_name)
                 info = predicted_id[predicted_id['name'] == image_name]
                 st.write("Model Prediction :", info['predict'].values[0]) 
                 path = f".\\images\\{df_path[:len(df_path)-4]}\\" + str(info['id'].values[0]) + "\\" + info['tank_name'].values[0] + "\\" + 'after' + "\\" + image_name
-                #path = 'C:\\Users\\User\\water_inspection\\images\\1_June_2024\\520003758840\\NO.1 การตรวจสอบคุณภาพน้ำประปา \\after\\2024-06-03_0e4771ec-5fcc-4fc6-8d7c-32d68bb7303e.jpg.jpg'
                 image_base64 = get_image_base64(path)
                 display_image_popout(image_base64)
             else:
                 image_name = ''
 
-            st.write(f"### Image Dataset {df_path[:len(df_path)-3]}", predicted_id)
+            #st.write(f"### Image Dataset {df_path[:len(df_path)-3]}", predicted_id)
 
+            # Graph Dashboard
+            st.write(f"## Dashboard")
+    
             for i in range(2):
                 st.write("")
 
-            
+            # กราฟแท่งแสดงจำนวนถังน้ำดื่มและถังน้ำใช้
             ############ Create the bar chart with customizations
             tank_dataFrame = pd.DataFrame({
                 'Tank': tank_name,
@@ -444,23 +524,28 @@ def data_frame_demo():
             # Display the chart in Streamlit
             st.altair_chart(bar_chart, use_container_width=True)
             
+            ## กราฟแท่งแสดงจำนวนร้านค้า (id)
             ############ Create the bar chart with customizations
+            id_list = []
+            for b in branch_name:
+                id_list.append(id[id['ชื่อร้าน'] == b]['รหัสร้าน'].values[0])
             branch_dataFrame = pd.DataFrame({
-                'branch': branch_name,
+                'shop ID': id_list,
                 'Amount of image': branch_quantity
             })
             bar_chart = alt.Chart(branch_dataFrame).mark_bar().encode(
-                x=alt.X('branch', sort='-y'),  # Sort bars by amount
+                x=alt.X('shop ID', sort='-y'),  # Sort bars by amount
                 y='Amount of image',
-                color='branch',  # Color bars by fruit
-                tooltip=['branch', 'Amount of image']  # Add tooltips
+                color='shop ID',  # Color bars by fruit
+                tooltip=['shop ID', 'Amount of image']  # Add tooltips
             ).properties(
-                title=f'Amount of branch = {len(branch_quantity)}'
+                title=f'Amount of shop ID = {len(branch_quantity)}'
             ).interactive()  # Make the chart interactive
 
             # Display the chart in Streamlit
             st.altair_chart(bar_chart, use_container_width=True)
 
+            ## กราฟพายแสดงสถานะมาตรฐานของรสาขา
             # ############ Create Prediction based on code pie chart with customizations
             q_name, q_quantity = get_data(id, 'Quarified status')
             data = pd.DataFrame({
@@ -477,6 +562,8 @@ def data_frame_demo():
             fig = px.pie(data, values='Amount', names='เกณฑ์มาตรฐาน', title='สถานะมาตรฐานของร้านค้า',color='เกณฑ์มาตรฐาน',
                          color_discrete_map=color_discrete_map)
             st.plotly_chart(fig)
+
+            ## กราฟพายแสดงจำนวนภาพแบ่งตามสถานะมุมกล้อง
             ############ Create camera position pie chart with customizations
             data = pd.DataFrame({
                 'camera_state': cam_name,
@@ -492,6 +579,7 @@ def data_frame_demo():
                          color_discrete_map=color_discrete_map)
             st.plotly_chart(fig)
 
+            ## กราฟพายแสดงจำนวนภาพแบ่งตามสถานะมาตรฐาน
             ############ Create Prediction pie chart with customizations
             data = pd.DataFrame({
                 'Prediction': predict_name,
@@ -521,40 +609,58 @@ def data_frame_demo():
         )
 
 
+# Set page title and icon
 st.set_page_config(page_title="Water PM Project", page_icon="📊")
+
+# หัวข้อตัวหนา Test RPA 
 st.markdown("# Test RPA")
 
+# list ของปี และ เดือน
 syear_options = ["2023", "2024"]
 smonth_options = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 sday = {"January": 31, "February": 28, "March": 31, "April": 30, "May": 31, "June": 30, "July": 31, "August": 31, "September": 30, "October": 31, "November": 30, "December": 31}
 month = {'January':1, 'February':2, 'March':3, 'April':4, 'May':5, 'June':6, 'July':7, 'August':8, 'September':9, 'October':10, 'November':11, 'December':12}
+# สร้าง dropdown สำหรับเลือกปี และ เดือน
 syear_option = st.selectbox("RPA Select year:", syear_options)
 smonth_option = st.selectbox("RPA Select month:", smonth_options)
 
+# list ของวัน
 sday_options = [i for i in range(1,sday[smonth_option]+1)]
+# สร้าง dropdown สำหรับเลือกวัน
 sday_option = st.selectbox("RPA Select day:", sday_options)
 
-# date = '11_June_2024'
-# date_list = date.split("_")
-# print(date_list)
-# print(month[date_list[1]])
+now = datetime.now()
 
-if st.button('test RPA'):
-    #createDataset(day = int(date_list[0]), month = month[date_list[1]], year = int(date_list[2]), window = True, switch = True)
+year   = now.year
+month  = now.month
+day    = now.day
+
+hour   = now.hour
+minute = now.minute
+second = now.second
+
+print(f"Year: {year}, Month: {month}, Day: {day}, Hour: {hour}, Minute: {minute}, Second: {second}")
+t = now.strftime("%H:%M:%S")
+print(f"Time : {t}")
+# สร้างปุ่ม test RPA
+if st.button('test RPA') or (hour == 23 and minute == 59 and second == 59):
+    # initialize model
     model = initialize_NN()
     cam_model = initialize_EfficientNetModel('.\\weight\\camPosweight.pt')
+    # RPA
     createDataset(day = int(sday_option), month = month[smonth_option], year = int(syear_option), window = True, switch = True)
+    # สร้าง model และ classify water pm
     createDF(model,cam_model, f'{sday_option}_{smonth_option}_{syear_option}')
     tf.keras.backend.clear_session()
+
+# สร้างปุ่ม stop RPA
 if st.button('Stop RPA'):
     createDataset(day = int(sday_option), month = month[smonth_option], year = int(syear_option), window = False, switch = False)
 
 st.markdown("# Water PM Project")
 st.sidebar.header("Water PM Project")
 st.write(
-    """This demo demonstrates how to create a simple dashboard of water pm project."""
+    """Demonstration of how to create a simple dashboard of water pm project."""
 )
 
 data_frame_demo()
-
-# show_code(mapping_demo)

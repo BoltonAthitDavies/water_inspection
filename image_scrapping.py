@@ -296,7 +296,7 @@ if __name__ == '__main__':
         # driver.execute_script(f"document.body.style.zoom='{zoom_level}'")
         
         # เลือกวัน
-        day = 5
+        day = 7
         # เลือกเดือน
         month = 7
         # เลือกปี
@@ -321,6 +321,7 @@ if __name__ == '__main__':
         # หาจำนวนรูปภาพทั้งหมด
         ## print html script ของหน้านี้
         num_pic_link_contents = loginPage.getpageScript(driver=driver)
+        print(num_pic_link_contents)
         num_pic_list = loginPage.getList(num_pic_link_contents,'"', ' of ')
         num_pic = num_pic_list[0].split(' ')[2]
         print(f"number of img : {num_pic}")
