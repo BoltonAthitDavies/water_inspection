@@ -1,12 +1,9 @@
 import os
-
 os.environ["KERAS_BACKEND"] = "jax"
-
 import cv2
 # import shutil
 import numpy as np
 import keras
-import numpy as np
 import matplotlib.pyplot as plt
 # from keras.preprocessing.image import ImageDataGenerator
 # from keras.models import Sequential
@@ -16,10 +13,8 @@ from keras.applications import EfficientNetV2B0, MobileNetV2
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten
 from keras.models import load_model
-# binary_crossentropy
 import tensorflow as tf
 import pandas as pd
-
 
 # tf.keras.backend.clear_session()
 # print("TensorFlow version:", tf.__version__)
@@ -70,6 +65,29 @@ def initialize_EfficientNetModel(path):
 def initialize_NN():
     new_model = load_model('.\\weight\\pmfinal.h5')
     return new_model
+
+def initialize_NNpt(path, input_size):
+    model = Sequential()
+    model.add(Conv2D(16, (3,3), 1, activation='relu', input_shape=(input_size,input_size,3)))
+    model.add(MaxPooling2D())
+    model.add(Conv2D(32, (3,3), 1, activation='relu'))
+    model.add(MaxPooling2D())
+    model.add(Conv2D(16, (3,3), 1, activation='relu'))
+    model.add(MaxPooling2D())
+    model.add(Flatten())
+    model.add(Dense(256, activation='relu'))
+    model.add(Dense(1, activation='sigmoid'))
+    # Create a checkpoint object
+    checkpoint = tf.train.Checkpoint(model=model)
+
+    # Restore the model weights from the checkpoint
+    checkpoint_dir = path
+    checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir)).expect_partial()
+
+    return model
+
+
+
 # C:\Users\User\water_inspection\weight
 def createDF(model, camPosmodel, date):
     name_list = []
@@ -80,6 +98,7 @@ def createDF(model, camPosmodel, date):
     predict_list = []
     shopBranch_list = []
     excel = pd.read_csv(f".\\dataframe\\{date}.csv")
+    i = 0
     for id in os.listdir(f".\\images\\{date}\\"):
         for tank in os.listdir(f".\\images\\{date}\\" + id):
             if 'ถังน้ำดื่ม' in tank:
@@ -89,25 +108,27 @@ def createDF(model, camPosmodel, date):
             else:
                 j = 0
             for time in os.listdir(f".\\images\\{date}\\" + id + "\\" + tank):
-                i = 0
                 for img in os.listdir(f".\\images\\{date}\\" + id + "\\" + tank + "\\" + time):
                     os.chdir(f".\\images\\{date}\\" + id + "\\" + tank + "\\" + time)
                     # os.rename(current_file_name, new_file_name)
-                    new_name = f"{excel[excel['หมายเลขงาน'] == int(id)].iloc[0,2]}_tank{j}_{i}.jpg".replace(" ", "")
+                    new_name = f"{date}_{excel[excel['หมายเลขงาน'] == int(id)].iloc[0,2]}_tank{j}_{i}.jpg".replace(" ", "")
                     os.rename(img, new_name)
                     print(f".\\images\\{date}\\" + id + "\\" + tank + "\\" + time)
                     print(new_name)
                     pic = cv2.imread(new_name)    
                     pic = cv2.resize(pic, (256,256))
                     # pic = cv2.resize(pic, (224,224))
+                    pic2 = cv2.resize(pic, (256,256))
+                    # pic2 = cv2.resize(pic, (224,224))
                     pic = np.array([pic])
+                    pic2 = np.array([pic2])
 
                     camPos_predict = camPosmodel.predict(pic)
                     print(camPos_predict)
                     if (time == 'after') and (('ถังน้ำดื่ม' in tank) or ('ถังน้ำใช้' in tank)):
                         if camPos_predict[0][0] >= 0.5:
                             # ['ไม่ถูกต้อง', 'ถูกต้อง']
-                            predict = model.predict(pic)
+                            predict = model.predict(pic2)
                             anss = predict.argmax(axis=-1)
                             print(predict, anss)
                             if predict[0] >= 0.5:
@@ -141,7 +162,7 @@ def createDF(model, camPosmodel, date):
                             camPos_list.append('-')
                     os.chdir(f"..\\..\\..\\..\\..\\")
                     i += 1
-                j += 1
+                # j += 1
 
     data = pd.DataFrame({
         'name': name_list,
@@ -160,8 +181,9 @@ if __name__ == "__main__":
 
     # model = initialize_model()
     model = initialize_NN()
-    camPos_model = initialize_EfficientNetModel('.\\weight\\camPosweight.pt')
-    date = "5_July_2024"
+    camPos_model = initialize_NNpt('.\\weight\\camPosweightv3.pt', 256)
+    # camPos_model = initialize_NN()
+    date = "1_June_2024"
 
     createDF(model,camPos_model, date)
     

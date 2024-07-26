@@ -165,7 +165,7 @@ class RPA:
         export_button = driver.find_element(By.XPATH, '/html/body/app-root/app-e-service-plan/div/div[2]/div[2]/div[2]/button')
         ## กดปุ่ม "Export to Excel"
         export_button.click()
-        time.sleep(5)
+        time.sleep(10)
 
         project_path = os.getcwd()
         root_path = os.path.abspath(os.sep)
@@ -289,16 +289,16 @@ if __name__ == '__main__':
 
     try:
         loginPage = RPA(login_url)
-        driver = loginPage.getURL(window=True)
+        driver = loginPage.getURL(window=False)
         # driver.set_window_size(500, 850)
 
         # zoom_level = "0.75"  # Zoom in to 150%
         # driver.execute_script(f"document.body.style.zoom='{zoom_level}'")
         
         # เลือกวัน
-        day = 7
+        day = 5
         # เลือกเดือน
-        month = 7
+        month = 6
         # เลือกปี
         year = 2024
         ## หน้า login --> หน้าตารางรวมแผนงาน
@@ -321,7 +321,11 @@ if __name__ == '__main__':
         # หาจำนวนรูปภาพทั้งหมด
         ## print html script ของหน้านี้
         num_pic_link_contents = loginPage.getpageScript(driver=driver)
-        print(num_pic_link_contents)
+        print(f"get page script : {num_pic_link_contents}")
+        # Specify the path to the file
+        file_path = 'D:\\download\\webtext.txt'
+        with open(file_path, 'w', encoding="utf-8") as file:
+            file.write(str(num_pic_link_contents))
         num_pic_list = loginPage.getList(num_pic_link_contents,'"', ' of ')
         num_pic = num_pic_list[0].split(' ')[2]
         print(f"number of img : {num_pic}")
@@ -332,7 +336,7 @@ if __name__ == '__main__':
         # row  column(pic button)
         # tr[1]/td[4]
         # path หน้าตารางแผนงาน ณ เดือนที่เลือก
-        n = 1
+        n = 32
         while n <= int(num_pic):
             print(f"n = {n}")
 
@@ -361,9 +365,10 @@ if __name__ == '__main__':
             print(f"scroll_to_height : {scroll_to_height}")
             driver.execute_script(f"window.scrollTo(0, {scroll_to_height})")
             time.sleep(2)
-            # # /html/body/app-root/app-e-service-table/div/app-table-contract/div/table/tbody/tr[33]/td[4]
+            ## /html/body/app-root/app-e-service-table/div/app-table-contract/div/table/tbody/tr[33]/td[4]
             sub_table_path = '/html/body/app-root/app-e-service-table/div/app-table-contract/div/table/tbody/'
             print(sub_table_path + f'tr[{n}]/td[4]')
+
             try:
                 ## element ของปุ่ม รูปภาพ ในตารางแผนงาน ณ เดือนที่เลือก
                 pic_button = driver.find_element(By.XPATH, sub_table_path + f'tr[{n}]/td[4]')

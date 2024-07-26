@@ -293,48 +293,110 @@ def data_frame_demo():
         return tank_name, tank_quantity
 
     try:
-        # สร้าง date dropdown
-        num_to_month = {"01":'January', '02':'February', '03':'March', '04':'April', '05':'May', '06':'June', '07':'July', '08':'August', '09':'September', '10':'October', '11':'November', '12':'December'}
-        d = st.date_input("When's your birthday", value=None)
-        st.write(d)
-        d = str(d)
-        d = d.split('-')
-        if d[0] != 'None':
-            if d[1][0] == '0':
-                day_option = d[2].replace('0', '')
+        # สร้าง toggle สำหรับเลือกว่าจะเป็นวันเดี่ยวๆหรือเป็นช่วงๆ
+        monthrangeMode = st.toggle("multiple date", False)
+        if monthrangeMode == False:
+            # สร้าง date dropdown
+            num_to_month = {"01":'January', '02':'February', '03':'March', '04':'April', '05':'May', '06':'June', '07':'July', '08':'August', '09':'September', '10':'October', '11':'November', '12':'December'}
+            d = st.date_input("Select the date", value = None)
+            st.write(d)
+            d = str(d)
+            d = d.split('-')
+            if d[0] != 'None':
+                if d[1][0] == '0':
+                    day_option = d[2].replace('0', '')
+                else:
+                    day_option = d[2]   
+                month_option = num_to_month[d[1]]
+                year_option = d[0]
             else:
-                day_option = d[2]   
-            month_option = num_to_month[d[1]]
-            year_option = d[0]
+                day_option = 1
+                month_option = 'January'
+                year_option = 2000
+
+            # สร้างตัวแปร dataset path
+            dfs_path = ".\\dataframe\\"
+            dfs_list = os.listdir(dfs_path)
+            df_path = f"{day_option}_{month_option}_{year_option}.csv"
+            predictedDF_path = f"{day_option}_{month_option}_{year_option}_predict.csv"
         else:
-            day_option = 1
-            month_option = 'January'
-            year_option = 2000
+            # สร้าง date dropdown
+            num_to_month = {"01":'January', '02':'February', '03':'March', '04':'April', '05':'May', '06':'June', '07':'July', '08':'August', '09':'September', '10':'October', '11':'November', '12':'December'}
+            From = st.date_input("from", value = None)
+            st.write(From)
+            From = str(From)
+            From = From.split('-')
+            if From[0] != 'None':
+                if From[1][0] == '0':
+                    day_optionfrom = From[2].replace('0', '')
+                else:
+                    day_optionfrom = From[2]  
 
-        # year_options = ["2023", "2024"]
-        # month_options = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-        # day = {"January": 31, "February": 28, "March": 31, "April": 30, "May": 31, "June": 30, "July": 31, "August": 31, "September": 30, "October": 31, "November": 30, "December": 31}
+                month_optionfrom = num_to_month[From[1]]
+                year_optionfrom = From[0]
+            else:
+                day_optionfrom = 1
+                month_optionfrom = 'January'
+                year_optionfrom = 1000
+            
+            To = st.date_input("to", value = None)
+            st.write(To)
+            To = str(To)
+            To = To.split('-')
+            if To[0] != 'None':
+                if To[1][0] == '0':
+                    day_optionto = To[2].replace('0', '')
+                else:
+                    day_optionto = To[2]   
 
-        # year_option = st.selectbox("Select year:", year_options)
-        # month_option = st.selectbox("Select month:", month_options)
-        
-        # day_options = [i for i in range(1,day[month_option]+1)]
-        # day_option = st.selectbox("Select day:", day_options)
+                month_optionto = num_to_month[To[1]]
+                year_optionto = To[0]
+            else:
+                day_optionto = 1
+                month_optionto = 'January'
+                year_optionto = 1000
 
-        # สร้างตัวแปร dataset path
-        dfs_path = ".\\dataframe\\"
-        dfs_list = os.listdir(dfs_path)
-        df_path = f"{day_option}_{month_option}_{year_option}.csv"
-        predictedDF_path = f"{day_option}_{month_option}_{year_option}_predict.csv"
+            # สร้างตัวแปร dataset path
+            dfs_path = ".\\dataframe\\"
+            dfs_list = os.listdir(dfs_path)
+            df_path = f"{day_optionfrom}_{month_optionfrom}_{year_optionfrom}.csv"
+            predictedDF_path = f"{day_optionto}_{month_optionto}_{year_optionto}_predict.csv"
 
         # สร้าง dataset จาก csv file
-        if df_path in dfs_list:
-
-            # สร้าง dataset จาก csv file (ที่มาจาก RPA)
-            id = get_pic_data(dfs_path + df_path) 
-            # สร้าง dataset จาก csv file (ที่มีการ predict)
-            predicted_id = get_pic_data(dfs_path + predictedDF_path).sort_index()
-
+        if (df_path in dfs_list) and (predictedDF_path in dfs_list):
+            if monthrangeMode == False:
+                # สร้าง dataset จาก csv file (ที่มาจาก RPA)
+                id = get_pic_data(dfs_path + df_path).reset_index()
+                # สร้าง dataset จาก csv file (ที่มีการ predict)
+                predicted_id = get_pic_data(dfs_path + predictedDF_path).sort_index()
+            else:
+                # 31 28 31 30 31 30 31 31 30 31 30 31
+                # day_checkpoint = {'January':1, 'February':60, 'March':91, 'April':121, 'May':152, 'June':182, 'July':213, 'August':244, 
+                #                   'September':274, 'October':305, 'November':335, 'December':366}
+                day_checkpoint = {'January':0, 'February':31, 'March':59, 'April':90, 'May':120, 'June':151, 'July':181, 'August':212, 
+                                  'September':243, 'October':273, 'November':304, 'December':334}
+                checkpoint_list = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
+                # สร้าง dataset จาก csv file (ที่มาจาก RPA)
+                id = pd.DataFrame()
+                predicted_id = pd.DataFrame()
+                range_from = day_checkpoint[month_optionfrom] + int(day_optionfrom)
+                range_to = day_checkpoint[month_optionto] + int(day_optionto)
+                # print(f'range from : {range_from}')
+                for i in range(range_from, range_to+1):
+                    for j in range(len(checkpoint_list)):
+                        if i < checkpoint_list[j]:
+                            monthss= list(day_checkpoint.keys())[j-1]
+                            break
+                    df_path = f"{i - day_checkpoint[monthss]}_{monthss}_{year_optionfrom}.csv"
+                    predictedDF_path = f"{i - day_checkpoint[monthss]}_{monthss}_{year_optionto}_predict.csv"
+                    # print(df_path, predictedDF_path)
+                    if (df_path in dfs_list) and (predictedDF_path in dfs_list):
+                        id = pd.concat([id, get_pic_data(dfs_path + df_path)], axis=0)
+                        predicted_id = pd.concat([predicted_id, get_pic_data(dfs_path + predictedDF_path)], axis=0)
+                id = id.reset_index()
+                predicted_id = predicted_id.sort_index()
+            
+            # print(id)
             # สร้างตัวแปรเพื่อเก็บข้อมูล column ต่างๆ
             image_name, image_quantity = get_data(predicted_id, 'name')
             branch_name, branch_quantity = get_data(predicted_id, 'branch')
@@ -382,7 +444,8 @@ def data_frame_demo():
                 else:
                     quarified_list.append(f'None')
 
-            # รวบ column เข้ากับ dataframe (id)
+            # รวบ quarified_list column เข้ากับ dataframe (id)
+            # print('quarified_list : ', len(quarified_list))
             id = pd.concat([id, pd.DataFrame(quarified_list, columns=['Quarified status'])], axis=1)
             
             # สร้าง column จำนวนถังน้ำดื่ม, ถังน้ำใช้และรูปถ่ายที่มีมุมกล้องไม่ถูกต้อง
