@@ -1,12 +1,12 @@
 import streamlit as st
 import datetime
-import inspect
-import textwrap
+# import inspect
+# import textwrap
 import time
 import pandas as pd
 import altair as alt
 import os
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from PIL import Image
 import base64
 import plotly.express as px 
@@ -438,9 +438,9 @@ def data_frame_demo():
                 if branch in ng_camPos:
                     quarified_list.append(f'มุมกล้องไม่ถูกต้อง')
                 elif branch in unquarified_branch:
-                    quarified_list.append(f'unquarified')
+                    quarified_list.append(f'ไม่ถูกต้อง')
                 elif branch in quarified_branch:
-                    quarified_list.append(f'quarified')
+                    quarified_list.append(f'ถูกต้อง')
                 else:
                     quarified_list.append(f'None')
 
@@ -617,28 +617,12 @@ def data_frame_demo():
             })
 
             color_discrete_map = {
-                'quarified': 'green',
-                'unquarified': 'red',
-                'มุมกล้องไม่ถูกต้อง': 'gray',
+                'ถูกต้อง': 'green',
+                'ไม่ถูกต้อง': 'red',
+                'มุมกล้องไม่ถูกต้อง': 'yellow',
             }
 
-            fig = px.pie(data, values='Amount', names='เกณฑ์มาตรฐาน', title='สถานะมาตรฐานของร้านค้า',color='เกณฑ์มาตรฐาน',
-                         color_discrete_map=color_discrete_map)
-            st.plotly_chart(fig)
-
-            ## กราฟพายแสดงจำนวนภาพแบ่งตามสถานะมุมกล้อง
-            ############ Create camera position pie chart with customizations
-            data = pd.DataFrame({
-                'camera_state': cam_name,
-                'Amount': cam_quantity
-            })
-
-            color_discrete_map = {
-                '+': 'white',
-                '-': 'gray',
-            }
-
-            fig = px.pie(data, values='Amount', names='camera_state', title='camera position Pie Chart',color='camera_state',
+            fig = px.pie(data, values='Amount', names='เกณฑ์มาตรฐาน', title='สถานะมาตรฐานของร้านค้า (สาขา)',color='เกณฑ์มาตรฐาน',
                          color_discrete_map=color_discrete_map)
             st.plotly_chart(fig)
 
@@ -652,9 +636,10 @@ def data_frame_demo():
             color_discrete_map = {
                 'ถูกต้อง': 'green',
                 'ไม่ถูกต้อง': 'red',
+                'มุมกล้องไม่ถูกต้อง': 'yellow',
             }
 
-            fig = px.pie(data, values='Amount', names='Prediction', title='Prediction Pie Chart',color='Prediction',
+            fig = px.pie(data, values='Amount', names='Prediction', title='สถานะมาตรฐานของร้านค้า (รูป)',color='Prediction',
                          color_discrete_map=color_discrete_map)
             st.plotly_chart(fig)
 
@@ -705,16 +690,18 @@ second = now.second
 print(f"Year: {year}, Month: {month}, Day: {day}, Hour: {hour}, Minute: {minute}, Second: {second}")
 t = now.strftime("%H:%M:%S")
 print(f"Time : {t}")
+print(type(smonth_option))
 # สร้างปุ่ม test RPA
 if st.button('test RPA') or (hour == 23 and minute == 59 and second == 59):
-    # initialize model
-    model = initialize_NN()
-    cam_model = initialize_EfficientNetModel('.\\weight\\camPosweight.pt')
-    # RPA
-    createDataset(day = int(sday_option), month = month[smonth_option], year = int(syear_option), window = True, switch = True)
-    # สร้าง model และ classify water pm
-    createDF(model,cam_model, f'{sday_option}_{smonth_option}_{syear_option}')
-    tf.keras.backend.clear_session()
+    for i in range(1, day+1):
+        # initialize model
+        model = initialize_NN()
+        cam_model = initialize_EfficientNetModel('.\\weight\\camPosweight.pt')
+        # RPA
+        createDataset(day = int(i), month = month[smonth_option], year = int(syear_option), window = True, switch = True)
+        # สร้าง model และ classify water pm
+        createDF(model,cam_model, f'{i}_{smonth_option}_{syear_option}')
+        tf.keras.backend.clear_session()
 
 # สร้างปุ่ม stop RPA
 if st.button('Stop RPA'):
