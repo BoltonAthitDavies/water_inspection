@@ -289,14 +289,14 @@ if __name__ == '__main__':
 
     try:
         loginPage = RPA(login_url)
-        driver = loginPage.getURL(window=False)
+        driver = loginPage.getURL(window=True)
         # driver.set_window_size(500, 850)
 
         # zoom_level = "0.75"  # Zoom in to 150%
         # driver.execute_script(f"document.body.style.zoom='{zoom_level}'")
         
         # เลือกวัน
-        day = 5
+        day = 6
         # เลือกเดือน
         month = 6
         # เลือกปี

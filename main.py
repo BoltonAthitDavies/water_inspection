@@ -667,7 +667,8 @@ st.markdown("# Test RPA")
 syear_options = ["2023", "2024"]
 smonth_options = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 sday = {"January": 31, "February": 28, "March": 31, "April": 30, "May": 31, "June": 30, "July": 31, "August": 31, "September": 30, "October": 31, "November": 30, "December": 31}
-month = {'January':1, 'February':2, 'March':3, 'April':4, 'May':5, 'June':6, 'July':7, 'August':8, 'September':9, 'October':10, 'November':11, 'December':12}
+smonth = {'January':1, 'February':2, 'March':3, 'April':4, 'May':5, 'June':6, 'July':7, 'August':8, 'September':9, 'October':10, 'November':11, 'December':12}
+
 # สร้าง dropdown สำหรับเลือกปี และ เดือน
 syear_option = st.selectbox("RPA Select year:", syear_options)
 smonth_option = st.selectbox("RPA Select month:", smonth_options)
@@ -679,33 +680,40 @@ sday_option = st.selectbox("RPA Select day:", sday_options)
 
 now = datetime.now()
 
-year   = now.year
-month  = now.month
-day    = now.day
+y   = now.year
+m  = now.month
+d    = now.day
 
 hour   = now.hour
 minute = now.minute
 second = now.second
 
-print(f"Year: {year}, Month: {month}, Day: {day}, Hour: {hour}, Minute: {minute}, Second: {second}")
+print(f"Year: {y}, Month: {m}, Day: {d}, Hour: {hour}, Minute: {minute}, Second: {second}")
 t = now.strftime("%H:%M:%S")
 print(f"Time : {t}")
-print(type(smonth_option))
 # สร้างปุ่ม test RPA
 if st.button('test RPA') or (hour == 23 and minute == 59 and second == 59):
-    for i in range(1, day+1):
+    # # initialize model
+    # model = initialize_NN()
+    # cam_model = initialize_EfficientNetModel('.\\weight\\camPosweight.pt')
+    # # RPA
+    # createDataset(day = int(sday_option), month = smonth[smonth_option], year = int(syear_option), window = True, switch = True)
+    # # สร้าง model และ classify water pm
+    # createDF(model,cam_model, f'{sday_option}_{smonth_option}_{syear_option}')
+    # tf.keras.backend.clear_session()
+    for i in range(1, int(d)+1):
         # initialize model
         model = initialize_NN()
         cam_model = initialize_EfficientNetModel('.\\weight\\camPosweight.pt')
         # RPA
-        createDataset(day = int(i), month = month[smonth_option], year = int(syear_option), window = True, switch = True)
+        createDataset(day = int(i), month = int(m), year = int(y), window = True, switch = True)
         # สร้าง model และ classify water pm
-        createDF(model,cam_model, f'{i}_{smonth_option}_{syear_option}')
+        createDF(model,cam_model, f'{i}_{smonth_options[int(m)-1]}_{int(y)}')
         tf.keras.backend.clear_session()
 
 # สร้างปุ่ม stop RPA
 if st.button('Stop RPA'):
-    createDataset(day = int(sday_option), month = month[smonth_option], year = int(syear_option), window = False, switch = False)
+    createDataset(day = 1, month = smonth[month], year = int(2024), window = False, switch = False)
 
 st.markdown("# Water PM Project")
 st.sidebar.header("Water PM Project")
